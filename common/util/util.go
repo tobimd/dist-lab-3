@@ -13,5 +13,6 @@ func LoadEnvVariables(f *string, addrMap *map[string]string) {
 
 	for env := range *addrMap {
 		(*addrMap)[env] = os.Getenv(env)
+		log.Log(f, "Loaded environment variable \"%s\" = \"%s\"", env, (*addrMap)[env])
 	}
 }
