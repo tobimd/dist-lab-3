@@ -1,18 +1,64 @@
 package util
 
 import (
+	"bufio"
 	"dist/common/log"
 	"os"
 
 	"github.com/joho/godotenv"
 )
 
-func LoadEnvVariables(f *string, addrMap *map[string]string) {
+func LoadEnvVariables(addrMap *map[string]string) error {
 	err := godotenv.Load()
-	log.FailOnError(f, err, "Couldn't load variables from \".env\" at the root of the project")
+	if err != nil {
+		return err
+	}
 
 	for env := range *addrMap {
 		(*addrMap)[env] = os.Getenv(env)
-		log.Log(f, "Loaded environment variable \"%s\" = \"%s\"", env, (*addrMap)[env])
 	}
+
+	return nil
+}
+
+// Read through each line of `filename`, and call the function
+// `readLineCallback` using the current line as a parameter. If
+// that function returns false, then this will stop reading
+// lines.
+func ReadLines(filename string, readLineCallback func(string) bool) error {
+	file, err := os.OpenFile(filename, log.LstdAppendFlags, 0600)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	shouldStop := false
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		shouldStop = readLineCallback(scanner.Text())
+
+		if shouldStop {
+			break
+		}
+	}
+
+	return nil
+}
+
+func WriteLines(filename string, lines ...string) error {
+	file, err := os.OpenFile(filename, log.LstdAppendFlags, 0600)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	finalString := ""
+	for _, line := range lines {
+		finalString += line + "\n"
+	}
+
+	file.WriteString(finalString)
+	file.Sync()
+
+	return nil
 }
