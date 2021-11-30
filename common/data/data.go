@@ -5,12 +5,17 @@ package data
 
 var (
 	Command = struct {
-		ADD_CITY, DELETE_CITY, UPDATE_NAME, UPDATE_NUMBER, GET_NUMBER_REBELS uint8
+		ADD_CITY, DELETE_CITY, UPDATE_NAME, UPDATE_NUMBER, GET_NUMBER_REBELS CommandEnum
 	}{
-		ADD_CITY:          0,
-		DELETE_CITY:       1,
-		UPDATE_NAME:       2,
-		UPDATE_NUMBER:     3,
-		GET_NUMBER_REBELS: 4,
+		ADD_CITY:          CommandEnum{"AddCity", 0},
+		DELETE_CITY:       CommandEnum{"DeleteCity", 1},
+		UPDATE_NAME:       CommandEnum{"UpdateName", 2},
+		UPDATE_NUMBER:     CommandEnum{"UpdateNumber", 3},
+		GET_NUMBER_REBELS: CommandEnum{"GetNumRebels", 4},
 	}
 )
+
+type CommandEnum struct {
+	Name  string
+	Value uint8
+}
