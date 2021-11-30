@@ -8,17 +8,18 @@ import (
 )
 
 const (
-	LstdAppendFlags = os.O_APPEND | os.O_CREATE | os.O_WRONLY
-	LstdLogFlags    = log.LstdFlags | log.Lmicroseconds
+	LstdAppendFlags       = os.O_APPEND | os.O_CREATE | os.O_WRONLY
+	LstdLogFlags          = log.LstdFlags | log.Lmicroseconds
+	formattedLogOutputDir = "output_logs/%s"
 )
 
 var (
-	fallbackFileName = "unnamed-log"
+	fallbackFileName = "unnamed.log"
 )
 
 // Print formatted message to stdout as well as to log file
 func Print(f *string, msg string, a ...interface{}) {
-	log.Printf(fmt.Sprintf(msg, a...))
+	fmt.Printf(fmt.Sprintf(msg, a...))
 	Log(f, msg, a...)
 }
 
@@ -27,13 +28,15 @@ func Log(f *string, msg string, a ...interface{}) {
 	if f == nil {
 		f = &fallbackFileName
 	}
+	prefixedFilename := fmt.Sprintf(formattedLogOutputDir, *f)
 
-	file, err := os.OpenFile(*f, LstdAppendFlags, 0600)
-	FailOnError(f, err, "Couldn't open file \"%s\"", *f)
+	file, err := os.OpenFile(prefixedFilename, LstdAppendFlags, 0600)
+	FailOnError(&fallbackFileName, err, "Couldn't open file \"%s\"", prefixedFilename)
 	defer file.Close()
 
 	logger := log.New(file, "", LstdLogFlags)
 	logger.Println(fmt.Sprintf(msg, a...))
+	logger = nil
 }
 
 // If `err` is not `nil`, then follow with Fatal
@@ -46,6 +49,6 @@ func FailOnError(f *string, err error, msg string, a ...interface{}) {
 // Terminate process printing a formatted message to stdout and
 // to log file
 func Fatal(f *string, msg string, a ...interface{}) {
-	Print(f, "[ FATAL ! ] %s", fmt.Sprintf(msg, a...))
+	Print(f, "[ FATAL ! ] %s\n", fmt.Sprintf(msg, a...))
 	syscall.Exit(1)
 }
