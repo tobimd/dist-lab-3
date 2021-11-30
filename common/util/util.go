@@ -27,10 +27,10 @@ func LoadEnvVariables(addrMap *map[string]string) error {
 // lines.
 func ReadLines(filename string, readLineCallback func(string) bool) error {
 	file, err := os.OpenFile(filename, log.LstdAppendFlags, 0600)
+	defer file.Close()
 	if err != nil {
 		return err
 	}
-	defer file.Close()
 
 	shouldStop := false
 	scanner := bufio.NewScanner(file)
@@ -47,10 +47,10 @@ func ReadLines(filename string, readLineCallback func(string) bool) error {
 
 func WriteLines(filename string, lines ...string) error {
 	file, err := os.OpenFile(filename, log.LstdAppendFlags, 0600)
+	defer file.Close()
 	if err != nil {
 		return err
 	}
-	defer file.Close()
 
 	finalString := ""
 	for _, line := range lines {
