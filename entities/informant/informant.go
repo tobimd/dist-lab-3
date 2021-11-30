@@ -1,6 +1,8 @@
 package informant
 
-import "fmt"
+import (
+	"fmt"
+)
 
 var (
 	id int
