@@ -2,9 +2,11 @@ package util
 
 import (
 	"bufio"
+	"context"
 	"dist/common/data"
 	"dist/common/log"
 	"os"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -72,10 +74,14 @@ func WriteLines(filename string, lines ...string) (bool, error) {
 	return fileExisted, nil
 }
 
-func ReadUserInput(msg string, a ...interface{}) (data.UserInput, error) {
+func ReadUserInput(msg string, a ...interface{}) (data.CommandEnum, string, string, interface{}, error) {
 	// finalMsg := fmt.Sprintf(msg, a...)
 
 	// ...
 
-	return data.UserInput{}, nil
+	return data.CommandEnum{}, "planet", "city", 0, nil
+}
+
+func GetContext() (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.Background(), time.Second)
 }
