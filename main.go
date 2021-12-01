@@ -2,6 +2,7 @@ package main
 
 import (
 	"dist/common/log"
+	"dist/common/util"
 	"dist/entities/broker"
 	"dist/entities/fulcrum"
 	"dist/entities/informant"
@@ -12,7 +13,8 @@ import (
 )
 
 var (
-	f = "main.log"
+	f         = "main.log"
+	Addresses = make(map[string]string, 7)
 )
 
 func showHelp() {
@@ -26,6 +28,8 @@ func main() {
 	if len(argv) < 3 {
 		showHelp()
 	}
+
+	util.LoadEnvVariables(&Addresses)
 
 	cmd := argv[1]
 	arg := argv[2]
