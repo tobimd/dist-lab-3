@@ -13,9 +13,21 @@ var (
 		UPDATE_NUMBER:     CommandEnum{"UpdateNumber", 3},
 		GET_NUMBER_REBELS: CommandEnum{"GetNumRebels", 4},
 	}
+
+	Entity = struct {
+		FULCRUM_0, FULCRUM_1, FULCRUM_2, INFORMANT_0, INFORMANT_1, BROKER, LEIA string
+	}{
+		FULCRUM_0:   "FULCRUM_0",
+		FULCRUM_1:   "FULCRUM_1",
+		FULCRUM_2:   "FULCRUM_2",
+		INFORMANT_0: "INFORMANT_0",
+		INFORMANT_1: "INFORMANT_0",
+		BROKER:      "BROKER",
+		LEIA:        "LEIA",
+	}
 )
 
 type CommandEnum struct {
-	Name  string
-	Value uint8
+	Name string
+	Enum uint8
 }
