@@ -1,6 +1,8 @@
 package test
 
 import (
+	"dist/common/log"
+	"dist/entities/fulcrum"
 	"fmt"
 	"os"
 	"os/exec"
@@ -31,6 +33,8 @@ var (
 		"Nuba_City",
 		"Montrol_City",
 	}
+
+	f = "test.log"
 )
 
 type Entity struct {
@@ -53,8 +57,21 @@ func Run(testNumber int) {
 	switch testNumber {
 
 	case 0:
-		// Check if fulcrum servers save info correctly
-		CreateEntities(Entity{"fulcrum", 0}, Entity{"fulcrum", 1}, Entity{"fulcrum", 2})
+		// Test if a fulcrum server runs utility functions
+		// correctly (SavePlanetData, etc)
+		//
+		// Note, will fail if previous <planet>.txt logs aren't
+		// removed
+		log.Print(&f, "planet:%s -> time vector:%v", planets[0], fulcrum.SavePlanetData(planets[0], cities[0], 1))
+		log.Print(&f, "planet:%s -> time vector:%v", planets[0], fulcrum.SavePlanetData(planets[0], cities[1], 5))
+		log.Print(&f, "planet:%s -> time vector:%v", planets[2], fulcrum.SavePlanetData(planets[1], cities[4], 9))
+		log.Print(&f, "planet:%s -> time vector:%v", planets[0], fulcrum.SavePlanetData(planets[0], cities[0], 2))
+
+		// Expected output:
+		//     planet:Abafar -> time vector:{[1 0 0]}
+		//     planet:Abafar -> time vector:{[2 0 0]}
+		//     planet:Bogano -> time vector:{[1 0 0]}
+		//     planet:Abafar -> time vector:{[3 0 0]}
 
 	}
 
