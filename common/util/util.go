@@ -3,10 +3,17 @@ package util
 import (
 	"bufio"
 	"dist/common/log"
+	"errors"
 	"os"
 
 	"github.com/joho/godotenv"
 )
+
+// [Internal] Return true if file exists, false otherwise
+func fileExists(filename string) bool {
+	_, err := os.Stat(filename)
+	return !errors.Is(err, os.ErrNotExist)
+}
 
 func LoadEnvVariables(addrMap *map[string]string) error {
 	err := godotenv.Load()
@@ -25,11 +32,14 @@ func LoadEnvVariables(addrMap *map[string]string) error {
 // `readLineCallback` using the current line as a parameter. If
 // that function returns false, then this will stop reading
 // lines.
-func ReadLines(filename string, readLineCallback func(string) bool) error {
+// Returns true if file was created before attempting to read.
+func ReadLines(filename string, readLineCallback func(string) bool) (bool, error) {
+	fileExisted := fileExists(filename)
+
 	file, err := os.OpenFile(filename, log.LstdAppendFlags, 0600)
 	defer file.Close()
 	if err != nil {
-		return err
+		return fileExisted, err
 	}
 
 	shouldStop := false
@@ -42,14 +52,19 @@ func ReadLines(filename string, readLineCallback func(string) bool) error {
 		}
 	}
 
-	return nil
+	return fileExisted, nil
 }
 
-func WriteLines(filename string, lines ...string) error {
+// Create file (or append) each line in arguments where '\n' is
+// added at the end of each one.
+// Returns true if file was created before attempting to open.
+func WriteLines(filename string, lines ...string) (bool, error) {
+	fileExisted := fileExists(filename)
+
 	file, err := os.OpenFile(filename, log.LstdAppendFlags, 0600)
 	defer file.Close()
 	if err != nil {
-		return err
+		return fileExisted, err
 	}
 
 	finalString := ""
@@ -60,5 +75,5 @@ func WriteLines(filename string, lines ...string) error {
 	file.WriteString(finalString)
 	file.Sync()
 
-	return nil
+	return fileExisted, nil
 }
