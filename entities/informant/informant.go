@@ -18,7 +18,7 @@ func ExecuteCommand(command data.CommandEnum, planet string, city string, value 
 	// Recieve time vector, associated with that planet
 }
 
-func Run(informantId int, address string) {
+func Run(informantId int) {
 	id = informantId
 	f = fmt.Sprintf("informant_%d", id)
 }

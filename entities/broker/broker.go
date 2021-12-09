@@ -1,5 +1,5 @@
 package broker
 
-func Run(address string) {
+func Run() {
 
 }

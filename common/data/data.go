@@ -20,14 +20,14 @@ var (
 		CHECK_CONSISTENCY: CommandEnum{"", 5},
 	}
 
-	Entity = struct {
+	Address = struct {
 		FULCRUM, INFORMANT []string
 		BROKER, LEIA       string
 	}{
-		FULCRUM:   []string{"FULCRUM_0", "FULCRUM_1", "FULCRUM_2"},
-		INFORMANT: []string{"INFORMANT_0", "INFORMANT_1"},
-		BROKER:    "BROKER",
-		LEIA:      "LEIA",
+		FULCRUM:   []string{"0.0.0.0:10000", "0.0.0.0:10001", "0.0.0.0:10002"},
+		INFORMANT: []string{"0.0.0.0:10010", "0.0.0.0:10011"},
+		BROKER:    "0.0.0.0:10020",
+		LEIA:      "0.0.0.0:10030",
 	}
 )
 
