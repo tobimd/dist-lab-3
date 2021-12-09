@@ -63,8 +63,9 @@ func UpdatePlanetLog(command data.CommandEnum, planet string, city string, value
 	log.FailOnError(&f, err, "Couldn't write to file \"%s\"", filename)
 }
 
-func Run(fulcrumId int) {
+func Run(fulcrumId int, address string) {
 	id = fulcrumId
 	f = fmt.Sprintf("fulcrum_%d", id)
 
+	util.SetupServer(&f, address)
 }

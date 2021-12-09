@@ -21,15 +21,13 @@ var (
 	}
 
 	Entity = struct {
-		FULCRUM_0, FULCRUM_1, FULCRUM_2, INFORMANT_0, INFORMANT_1, BROKER, LEIA string
+		FULCRUM, INFORMANT []string
+		BROKER, LEIA       string
 	}{
-		FULCRUM_0:   "FULCRUM_0",
-		FULCRUM_1:   "FULCRUM_1",
-		FULCRUM_2:   "FULCRUM_2",
-		INFORMANT_0: "INFORMANT_0",
-		INFORMANT_1: "INFORMANT_0",
-		BROKER:      "BROKER",
-		LEIA:        "LEIA",
+		FULCRUM:   []string{"FULCRUM_0", "FULCRUM_1", "FULCRUM_2"},
+		INFORMANT: []string{"INFORMANT_0", "INFORMANT_1"},
+		BROKER:    "BROKER",
+		LEIA:      "LEIA",
 	}
 )
 

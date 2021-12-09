@@ -1,6 +1,7 @@
 package main
 
 import (
+	"dist/common/data"
 	"dist/common/log"
 	"dist/common/util"
 	"dist/entities/broker"
@@ -14,7 +15,7 @@ import (
 
 var (
 	f         = "main.log"
-	Addresses = make(map[string]string, 7)
+	addresses = make(map[string]string, 7)
 )
 
 func showHelp() {
@@ -29,7 +30,7 @@ func main() {
 		showHelp()
 	}
 
-	util.LoadEnvVariables(&Addresses)
+	util.LoadEnvVariables(&addresses)
 
 	cmd := argv[1]
 	arg := argv[2]
@@ -44,22 +45,22 @@ func main() {
 	if cmd == "run" {
 		switch arg {
 		case "broker":
-			broker.Run()
+			broker.Run(addresses[data.Entity.BROKER])
 
 		case "fulcrum":
 			if id < 0 || id > 2 {
 				log.Fatal(&f, "Please make sure that a valid id is given for fulcrum entity (0, 1 or 2)")
 			}
-			fulcrum.Run(id)
+			fulcrum.Run(id, addresses[data.Entity.FULCRUM[id]])
 
 		case "informant":
 			if id < 0 || id > 1 {
 				log.Fatal(&f, "Please make sure that a valid id is given for informant entity (0 or 1)")
 			}
-			informant.Run(id)
+			informant.Run(id, addresses[data.Entity.INFORMANT[id]])
 
 		case "leia":
-			leia.Run()
+			leia.Run(addresses[data.Entity.LEIA])
 
 		default:
 			log.Print(&f, "Couldn't recognize entity: \"%s\"", arg)
