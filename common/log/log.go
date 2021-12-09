@@ -51,7 +51,9 @@ func Log(f *string, msg string, a ...interface{}) {
 // If `err` is not `nil`, then follow with Fatal
 func FailOnError(f *string, err error, msg string, a ...interface{}) {
 	if err != nil {
-		Fatal(f, "%s (error:%v)", fmt.Sprintf(msg, a...), err)
+		Print(f, "[ FATAL ! ] %s", fmt.Sprintf(msg, a...))
+		Print(f, "[ ERROR ! ] %v\n", err)
+		syscall.Exit(1)
 	}
 }
 

@@ -20,5 +20,5 @@ func ExecuteCommand(command data.CommandEnum, planet string, city string, value 
 
 func Run(informantId int) {
 	id = informantId
-	f = fmt.Sprintf("informant_%d", id)
+	f = fmt.Sprintf("informant_%d.log", id)
 }

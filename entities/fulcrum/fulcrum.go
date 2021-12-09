@@ -4,6 +4,7 @@ import (
 	"dist/common/data"
 	"dist/common/log"
 	"dist/common/util"
+	"dist/pb"
 	"fmt"
 )
 
@@ -65,7 +66,22 @@ func UpdatePlanetLog(command data.CommandEnum, planet string, city string, value
 
 func Run(fulcrumId int) {
 	id = fulcrumId
-	f = fmt.Sprintf("fulcrum_%d", id)
+	f = fmt.Sprintf("fulcrum_%d.log", id)
 
-	util.SetupServer(&f, data.Address.FULCRUM[id])
+	util.SetupServer(&f, data.Address.FULCRUM[id], &server{})
+
+	conn1, client1 := util.SetupClient(&f, data.Address.FULCRUM[(id+1)%3])
+	conn2, client2 := util.SetupClient(&f, data.Address.FULCRUM[(id+2)%3])
+
+	defer conn1.Close()
+	defer conn2.Close()
+
+	log.Print(&f, "About to call both \"HelloTest\"s for both fulcrums")
+	res1 := HelloTest(client1, &pb.Empty{})
+	res2 := HelloTest(client2, &pb.Empty{})
+
+	log.Print(&f, "Successfully recieved both results as res1=\"%s\" and res2=\"%s\"", res1.String(), res2.String())
+
+	forever := make(chan bool)
+	<-forever
 }
