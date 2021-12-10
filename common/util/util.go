@@ -3,8 +3,8 @@ package util
 import (
 	"bufio"
 	"context"
-	"dist/common/data"
 	"dist/common/log"
+	"dist/pb"
 	"os"
 	"time"
 
@@ -74,12 +74,12 @@ func WriteLines(filename string, lines ...string) (bool, error) {
 	return fileExisted, nil
 }
 
-func ReadUserInput(msg string, a ...interface{}) (data.CommandEnum, string, string, interface{}, error) {
+func ReadUserInput(msg string, a ...interface{}) (*pb.Command, string, string, interface{}, error) {
 	// finalMsg := fmt.Sprintf(msg, a...)
 
-	// ...
+	/* code */
 
-	return data.CommandEnum{}, "planet", "city", 0, nil
+	return pb.Command_ADD_CITY.Enum(), "planet", "city", 0, nil
 }
 
 func GetContext() (context.Context, context.CancelFunc) {

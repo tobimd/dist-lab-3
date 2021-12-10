@@ -1,7 +1,7 @@
 package informant
 
 import (
-	"dist/common/data"
+	"dist/pb"
 	"fmt"
 )
 
@@ -10,7 +10,7 @@ var (
 	f  = ""
 )
 
-func ExecuteCommand(command data.CommandEnum, planet string, city string, value interface{}) {
+func ExecuteCommand(command *pb.Command, planet string, city string, value interface{}) {
 	// Send (command, planet, city, value) to Broker
 	// Recieve fulcrum server's address
 

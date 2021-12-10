@@ -51,8 +51,8 @@ func Log(f *string, msg string, a ...interface{}) {
 // If `err` is not `nil`, then follow with Fatal
 func FailOnError(f *string, err error, msg string, a ...interface{}) {
 	if err != nil {
-		Print(f, "[ FATAL ! ] %s", fmt.Sprintf(msg, a...))
-		Print(f, "[ ERROR ! ] %v\n", err)
+		Print(f, "FATAL ! %s", fmt.Sprintf(msg, a...))
+		Print(f, "ERROR ! %v\n", err)
 		syscall.Exit(1)
 	}
 }
@@ -60,7 +60,7 @@ func FailOnError(f *string, err error, msg string, a ...interface{}) {
 // Terminate process printing a formatted message to stdout and
 // to log file
 func Fatal(f *string, msg string, a ...interface{}) {
-	Print(f, "[ FATAL ! ] %s\n", fmt.Sprintf(msg, a...))
+	Print(f, "FATAL ! %s\n", fmt.Sprintf(msg, a...))
 	syscall.Exit(1)
 }
 

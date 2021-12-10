@@ -8,6 +8,7 @@ package proto;
 service Communication {
     rpc HelloTest(Empty) returns (Empty);
     rpc RunCommand(CommandParams) returns (Empty);
+    rpc BroadcastChanges(FulcrumHistory) returns (FulcrumHistory);
 }
 
 enum Command {
@@ -19,18 +20,21 @@ enum Command {
     CHECK_CONSISTENCY = 5;
 }
 
-message ClockVector {
-    optional uint32 time_0 = 1;
-    optional uint32 time_1 = 2;
-    optional uint32 time_2 = 3;
+message TimeVector {
+    repeated uint32 time = 1;
 }
 
 message CommandParams {
     optional Command command = 1;
     optional string planet_name = 2;
     optional string city_name = 3;
-    optional string new_name = 4;
-    optional uint32 num_of_rebels = 5;
+    optional string new_city_name = 4;
+    optional uint32 new_num_of_rebels = 5;
 }
+
+message FulcrumHistory {
+    repeated CommandParams planet_history = 1;
+}
+
 
 message Empty {}
