@@ -24,7 +24,23 @@ var (
 	// to pb.CommuncationClient which should be what gets
 	// returned by `util.SetupClient(...)`
 	clients = make(map[string]*Client)
+
+	// When using 'SavePlanetData', determine wether to append
+	// to the planet's history file, or rewrite it completely
+	// which is used when merging.
+	StoreMethod = struct{ Append, Rewrite Method }{Append: 0, Rewrite: 1}
+
+	// When leader fulcrum (id=0) tells neighbors to send their
+	// history to it, the server function BroadcastChanges will
+	// be called on leader and the response should be the merge
+	// from all three histories. To solve that issue, this
+	// channel will recieve boolean true when both histories
+	// have been stored
+	neighborChangesCh = make(chan bool)
+	neighborHistories = struct{ hist1, hist2 []*pb.CommandParams }{}
 )
+
+type Method uint8
 
 // Open (or create) a registry file corresponding to a specific
 // planet and add the corresponding information onto it.
@@ -32,10 +48,14 @@ var (
 // For planet "Tatooine", city "Mos Eisley" and number of rebels
 // "5", all info is stored in the following way:
 //     -- Tatooine.txt: Tatooine Mos_Eisley 5
-func SavePlanetData(planet string, city string, numRebels int) data.TimeVector {
+func SavePlanetData(planet string, city string, numRebels int, storeMethod Method) data.TimeVector {
 	// Set the filename and the data to save
 	filename := planet + ".txt"
 	info := fmt.Sprintf("%s %s %d", planet, city, numRebels)
+
+	if storeMethod == StoreMethod.Rewrite {
+		util.DeleteFile(filename)
+	}
 
 	// Write data into file
 	fileExisted, err := util.WriteLines(filename, info)
@@ -70,16 +90,33 @@ func UpdatePlanetLog(command *pb.Command, planet string, city string, value inte
 	log.FailOnError(&f, err, "Couldn't write to file \"%s\"", filename)
 }
 
-func ReadPlanetLog(planet string) []pb.CommandParams {
+func ReadPlanetLog(planet string) []*pb.CommandParams {
 	filename := fmt.Sprintf("log.%s.txt", planet)
-	info := make([]pb.CommandParams, 1)
+	info := make([]*pb.CommandParams, 1)
 
 	util.ReadLines(filename,
 		func(line string) bool {
 			// <command> <planet> <city> [<new_value>]
 			values := strings.Split(line, " ")
-			info = append(info, pb.CommandParams{
-				Command: pb.CommandFromString(values[0]),
+
+			command := pb.CommandFromString(values[0])
+			newName := ""
+			var newNumberOfRebels uint32 = 0
+
+			if len(values) == 4 {
+				if *command == pb.Command_UPDATE_NAME {
+					newName = values[3]
+				} else {
+					newNumberOfRebels = util.StringToUint32(values[3])
+				}
+			}
+
+			info = append(info, &pb.CommandParams{
+				Command:        command,
+				PlanetName:     &planet,
+				CityName:       &values[2],
+				NewCityName:    &newName,
+				NewNumOfRebels: &newNumberOfRebels,
 			})
 
 			return false
@@ -87,6 +124,15 @@ func ReadPlanetLog(planet string) []pb.CommandParams {
 	)
 
 	return info
+}
+
+func MergeHistories() []*pb.CommandParams {
+
+	// TODO: Implement merging strategy (using neighborHistories)
+
+	var newHistory []*pb.CommandParams
+
+	return newHistory
 }
 
 // Asynchronous function called only by one of the available
@@ -106,9 +152,6 @@ func SyncWithEventualConsistency() {
 				Command: pb.Command_CHECK_CONSISTENCY.Enum(),
 			})
 		}
-
-		// Await for them to  send 'BroadcastChanges' rpc call
-		// and use that to respond with the new merged history
 	}
 }
 
