@@ -67,10 +67,10 @@ func Run(testNumber int) {
 		//
 		// Note, will fail if previous <planet>.txt logs aren't
 		// removed
-		log.Print(&f, "planet:%s -> time vector:%v", planets[0], fulcrum.SavePlanetData(planets[0], cities[0], 1))
-		log.Print(&f, "planet:%s -> time vector:%v", planets[0], fulcrum.SavePlanetData(planets[0], cities[1], 5))
-		log.Print(&f, "planet:%s -> time vector:%v", planets[2], fulcrum.SavePlanetData(planets[1], cities[4], 9))
-		log.Print(&f, "planet:%s -> time vector:%v", planets[0], fulcrum.SavePlanetData(planets[0], cities[0], 2))
+		log.Print(&f, "planet:%s -> time vector:%v", planets[0], fulcrum.SavePlanetData(planets[0], cities[0], 1, fulcrum.StoreMethod.Append))
+		log.Print(&f, "planet:%s -> time vector:%v", planets[0], fulcrum.SavePlanetData(planets[0], cities[1], 5, fulcrum.StoreMethod.Append))
+		log.Print(&f, "planet:%s -> time vector:%v", planets[2], fulcrum.SavePlanetData(planets[1], cities[4], 9, fulcrum.StoreMethod.Append))
+		log.Print(&f, "planet:%s -> time vector:%v", planets[0], fulcrum.SavePlanetData(planets[0], cities[0], 2, fulcrum.StoreMethod.Append))
 
 		// Expected output:
 		//     planet:Abafar -> time vector:{[1 0 0]}
