@@ -76,6 +76,21 @@ func WriteLines(filename string, lines ...string) (bool, error) {
 	return fileExisted, nil
 }
 
+// Try to delete file if exists. If it doesn't, no errors will
+// be raised and false will be returned. Otherwise, return true
+func DeleteFile(filename string) bool {
+	exists := log.FileExists(filename)
+
+	if exists {
+		err := os.Remove(filename)
+		log.FailOnError(nil, err, "Couldn't remove file \"%s\"", filename)
+
+		return true
+	}
+
+	return false
+}
+
 func ReadUserInput(msg string, a ...interface{}) (*pb.Command, string, string, interface{}, error) {
 	// finalMsg := fmt.Sprintf(msg, a...)
 
