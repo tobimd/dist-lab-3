@@ -5,7 +5,9 @@ import (
 	"context"
 	"dist/common/log"
 	"dist/pb"
+	"math/rand"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -84,4 +86,24 @@ func ReadUserInput(msg string, a ...interface{}) (*pb.Command, string, string, i
 
 func GetContext() (context.Context, context.CancelFunc) {
 	return context.WithTimeout(context.Background(), time.Second)
+}
+
+// Same as 'strconv.Atoi(...)' but without having to handle the
+// error yourself all the time
+func StringToInt(value string) int {
+	num, err := strconv.Atoi(value)
+	log.FailOnError(nil, err, "Coudln't convert string \"%s\" to a number", value)
+
+	return num
+}
+
+// Used when setting values in a protobuf object
+func StringToUint32(value string) uint32 {
+	return uint32(StringToInt(value))
+}
+
+// Return a random number within [min, max] both inclusive.
+func RandInt(min int, max int) int {
+	rand.Seed(time.Now().UnixNano())
+	return rand.Intn(max-min) + min
 }
