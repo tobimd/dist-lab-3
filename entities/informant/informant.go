@@ -6,15 +6,12 @@ import (
 	"dist/common/util"
 	"dist/pb"
 	"fmt"
-
-	"google.golang.org/grpc"
 )
 
 var (
 	id      int
 	f       = ""
-	conns   []*grpc.ClientConn
-	clients []*pb.CommunicationClient
+	clients = make(map[string]*Client)
 )
 
 func ExecuteCommand(command *pb.Command, planet string, city string, value interface{}) {
@@ -40,9 +37,22 @@ func inter() {
 func Run(informantId int) {
 	id = informantId
 	f = fmt.Sprintf("informant_%d.log", id)
-	conns[0], clients[0] = util.SetupClient(&f, data.Address.BROKER)
-	conns[1], clients[1] = util.SetupClient(&f, data.Address.FULCRUM[0])
-	conns[2], clients[2] = util.SetupClient(&f, data.Address.FULCRUM[1])
-	conns[3], clients[3] = util.SetupClient(&f, data.Address.FULCRUM[2])
+	util.SetupServer(&f, data.Address.INFORMANT[id], &Server{})
 
+	// Setup all four clients with broker and three fulcrums
+	conn, client := util.SetupClient(&f, data.Address.BROKER)
+	defer conn.Close()
+
+	clients[data.Address.BROKER] = &Client{Client: client}
+
+	for i := 0; i < 3; i++ {
+		fulcrumAddress := data.Address.FULCRUM[i]
+		conn, client = util.SetupClient(&f, fulcrumAddress)
+		defer conn.Close()
+
+		clients[fulcrumAddress] = &Client{Client: client}
+	}
+
+	forever := make(chan bool)
+	<-forever
 }
