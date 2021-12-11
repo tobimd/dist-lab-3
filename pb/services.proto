@@ -12,28 +12,41 @@ service Communication {
 }
 
 enum Command {
-    ADD_CITY = 0;
-    DELETE_CITY = 1;
-    UPDATE_NAME = 2;
-    UPDATE_NUMBER = 3;
-    GET_NUMBER_REBELS = 4;
-    CHECK_CONSISTENCY = 5;
+    ADD_CITY = 0;          // [Informants] used to add a new city to a planet
+    DELETE_CITY = 1;       // [Informants] used to delete city from a planet
+    UPDATE_NAME = 2;       // [Informants] used to change name of a city
+    UPDATE_NUMBER = 3;     // [Informants] used to change number of rebels in a city
+    GET_NUMBER_REBELS = 4; // [Leia] return the number of rebels in a given city and planet
+    CHECK_CONSISTENCY = 5; // [Fulcrum] used internally to tell other fulcrums to send their history logs
 }
 
 message TimeVector {
-    repeated uint32 time = 1;
+    // Max amount of 'time' objects should be 3 because of each
+    // Fulcrum, even if more is allowed due to being a 'repeated'
+    // type of object.
+    repeated uint32 time = 1; 
 }
 
 message CommandParams {
-    optional Command command = 1;
-    optional string planet_name = 2;
-    optional string city_name = 3;
-    optional string new_city_name = 4;
-    optional uint32 new_num_of_rebels = 5;
+    optional Command command = 1;          // All possible commands that could be used (even if some entities do and some don't)
+    optional string planet_name = 2;       // The current planet being affected by the command
+    optional string city_name = 3;         // The current city from that planet being affected, or the name of the city if "AddCity" is used
+    optional uint32 num_of_rebels = 4;     // The current rebels in the city. NOTE: Only used when BroadcastChanges is being returned with the planet's history.
+    optional string new_city_name = 5;     // If command is "UpdateName", then this will contain the new city's name
+    optional uint32 new_num_of_rebels = 6; // If command is "UpdateNumber" or "AddCity" (with default value 0), then this will be set
+
+    // Used by fulcrums when syncing, append the time vector for
+    // merging, and may only be set in the last CommandParams 
+    // added for a given planet (because time vectors only 
+    // contain) info about the last update made to the planet.
+    optional TimeVector last_time_vector = 7; 
 }
 
+// Corresponds to the history of commands being run over a 
+// planet. That includes info of arguments such as the new number
+// of rebels being assigned to it.
 message FulcrumHistory {
-    repeated CommandParams planet_history = 1;
+    repeated CommandParams history = 1;
 }
 
 

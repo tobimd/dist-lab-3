@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion7
 type CommunicationClient interface {
 	HelloTest(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
 	RunCommand(ctx context.Context, in *CommandParams, opts ...grpc.CallOption) (*Empty, error)
+	BroadcastChanges(ctx context.Context, in *FulcrumHistory, opts ...grpc.CallOption) (*FulcrumHistory, error)
 }
 
 type communicationClient struct {
@@ -48,12 +49,22 @@ func (c *communicationClient) RunCommand(ctx context.Context, in *CommandParams,
 	return out, nil
 }
 
+func (c *communicationClient) BroadcastChanges(ctx context.Context, in *FulcrumHistory, opts ...grpc.CallOption) (*FulcrumHistory, error) {
+	out := new(FulcrumHistory)
+	err := c.cc.Invoke(ctx, "/proto.Communication/BroadcastChanges", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CommunicationServer is the server API for Communication service.
 // All implementations must embed UnimplementedCommunicationServer
 // for forward compatibility
 type CommunicationServer interface {
 	HelloTest(context.Context, *Empty) (*Empty, error)
 	RunCommand(context.Context, *CommandParams) (*Empty, error)
+	BroadcastChanges(context.Context, *FulcrumHistory) (*FulcrumHistory, error)
 	mustEmbedUnimplementedCommunicationServer()
 }
 
@@ -66,6 +77,9 @@ func (UnimplementedCommunicationServer) HelloTest(context.Context, *Empty) (*Emp
 }
 func (UnimplementedCommunicationServer) RunCommand(context.Context, *CommandParams) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RunCommand not implemented")
+}
+func (UnimplementedCommunicationServer) BroadcastChanges(context.Context, *FulcrumHistory) (*FulcrumHistory, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BroadcastChanges not implemented")
 }
 func (UnimplementedCommunicationServer) mustEmbedUnimplementedCommunicationServer() {}
 
@@ -116,6 +130,24 @@ func _Communication_RunCommand_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Communication_BroadcastChanges_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FulcrumHistory)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CommunicationServer).BroadcastChanges(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.Communication/BroadcastChanges",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CommunicationServer).BroadcastChanges(ctx, req.(*FulcrumHistory))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Communication_ServiceDesc is the grpc.ServiceDesc for Communication service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -130,6 +162,10 @@ var Communication_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RunCommand",
 			Handler:    _Communication_RunCommand_Handler,
+		},
+		{
+			MethodName: "BroadcastChanges",
+			Handler:    _Communication_BroadcastChanges_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
