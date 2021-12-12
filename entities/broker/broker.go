@@ -14,7 +14,7 @@ var (
 )
 
 func Run() {
-	f := "broker.log"
+	f = "broker.log"
 
 	util.SetupServer(&f, data.Address.BROKER, &Server{})
 
