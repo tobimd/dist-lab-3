@@ -18,27 +18,28 @@ var (
 func ExecuteCommand(command *pb.Command, planet string, city string, value interface{}) {
 	// Send (command, planet, city, value) to Broker
 	// Receive fulcrum server's address
-
+	fn := "<ExecuteCommand>"
 	var fulcrumResponse *pb.FulcrumResponse
 
 	str := fmt.Sprintf("%v", value)
 	broker := clients[data.Address.BROKER]
 	addressRes := broker.RunCommand(&pb.CommandParams{
 		Command: command,
-	})
+	}).FulcrumRedirectAddr
+
+	log.Log(&f, "%s Received fulcrum address from broker: %s", fn, *addressRes)
 
 	// Send (command, planet, city, value) to fulcrum
 	// Receive time vector, associated with that planet
-	fulcrum := clients[*addressRes.FulcrumRedirectAddr]
+	fulcrum := clients[*addressRes]
 
-	log.Log(&f, "<ExecuteCommand> sending %s command to address %s", command, addressRes.FulcrumRedirectAddr)
-	log.Log(&f, "%s, %s, %s, %s", pb.Command_ADD_CITY, pb.Command_UPDATE_NAME, pb.Command_UPDATE_NAME, pb.Command_DELETE_CITY)
+	log.Log(&f, "%s Sending command \"%s\" to fulcrum", fn, command)
 	switch *command {
 
 	case pb.Command_ADD_CITY:
 		number, err := strconv.Atoi(str)
 		rebelNumber := uint32(number)
-		log.FailOnError(&f, err, "Failed to convert string to int (number of rebels")
+		log.FailOnError(&f, err, "%s Failed to convert string to int (number of rebels)", fn)
 		fulcrumResponse = fulcrum.RunCommand(&pb.CommandParams{
 			Command:        command,
 			PlanetName:     &planet,
@@ -55,7 +56,7 @@ func ExecuteCommand(command *pb.Command, planet string, city string, value inter
 	case pb.Command_UPDATE_NUMBER:
 		number, err := strconv.Atoi(str)
 		rebelNumber := uint32(number)
-		log.FailOnError(&f, err, "Failed to convert string to int (number of rebels")
+		log.FailOnError(&f, err, "$s Failed to convert string to int (number of rebels)", fn)
 		fulcrumResponse = fulcrum.RunCommand(&pb.CommandParams{
 			Command:        command,
 			PlanetName:     &planet,
@@ -69,9 +70,9 @@ func ExecuteCommand(command *pb.Command, planet string, city string, value inter
 			CityName:   &city,
 		})
 	default:
-		log.Fatal(&f, "Received command unknown to informant")
+		log.Log(&f, "%s Received command unknown to informant", fn)
 	}
-	log.Log(&f, "Received time vector: %s", fulcrumResponse.TimeVector)
+	log.Log(&f, "%s Received time vector: %s", fn, fulcrumResponse.TimeVector)
 
 }
 
@@ -80,10 +81,9 @@ func ConsoleInteraction() {
 	fmt.Print("Saludos Informante\n")
 
 	for {
-		log.Log(&f, "<ConsoleInteraction> ")
-		command, planet, city, value, err := util.ReadUserInput("Ingresa el comando y argumentos que quieres usar:\n")
-		log.Log(&f, "<consoleInteraction> Parsed command: %s %s %s %s", command, planet, city, value)
-		log.FailOnError(&f, err, "failed to read user input")
+		log.Log(&f, "<ConsoleInteraction> Requesting user input")
+		command, planet, city, value := util.ReadUserInput(&f, "Ingresa el comando y argumentos que quieres usar:")
+		log.Log(&f, "<ConsoleInteraction> Parsed command: %s %s %s %s", command, planet, city, value)
 		ExecuteCommand(command, planet, city, value)
 	}
 }
