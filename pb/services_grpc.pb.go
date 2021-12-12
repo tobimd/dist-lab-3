@@ -19,7 +19,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CommunicationClient interface {
 	HelloTest(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
-	RunCommand(ctx context.Context, in *CommandParams, opts ...grpc.CallOption) (*Empty, error)
+	RunCommand(ctx context.Context, in *CommandParams, opts ...grpc.CallOption) (*FulcrumResponse, error)
 	BroadcastChanges(ctx context.Context, in *FulcrumHistory, opts ...grpc.CallOption) (*FulcrumHistory, error)
 }
 
@@ -40,8 +40,8 @@ func (c *communicationClient) HelloTest(ctx context.Context, in *Empty, opts ...
 	return out, nil
 }
 
-func (c *communicationClient) RunCommand(ctx context.Context, in *CommandParams, opts ...grpc.CallOption) (*Empty, error) {
-	out := new(Empty)
+func (c *communicationClient) RunCommand(ctx context.Context, in *CommandParams, opts ...grpc.CallOption) (*FulcrumResponse, error) {
+	out := new(FulcrumResponse)
 	err := c.cc.Invoke(ctx, "/proto.Communication/RunCommand", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -63,7 +63,7 @@ func (c *communicationClient) BroadcastChanges(ctx context.Context, in *FulcrumH
 // for forward compatibility
 type CommunicationServer interface {
 	HelloTest(context.Context, *Empty) (*Empty, error)
-	RunCommand(context.Context, *CommandParams) (*Empty, error)
+	RunCommand(context.Context, *CommandParams) (*FulcrumResponse, error)
 	BroadcastChanges(context.Context, *FulcrumHistory) (*FulcrumHistory, error)
 	mustEmbedUnimplementedCommunicationServer()
 }
@@ -75,7 +75,7 @@ type UnimplementedCommunicationServer struct {
 func (UnimplementedCommunicationServer) HelloTest(context.Context, *Empty) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method HelloTest not implemented")
 }
-func (UnimplementedCommunicationServer) RunCommand(context.Context, *CommandParams) (*Empty, error) {
+func (UnimplementedCommunicationServer) RunCommand(context.Context, *CommandParams) (*FulcrumResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RunCommand not implemented")
 }
 func (UnimplementedCommunicationServer) BroadcastChanges(context.Context, *FulcrumHistory) (*FulcrumHistory, error) {

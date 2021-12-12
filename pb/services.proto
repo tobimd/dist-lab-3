@@ -7,7 +7,7 @@ package proto;
 
 service Communication {
     rpc HelloTest(Empty) returns (Empty);
-    rpc RunCommand(CommandParams) returns (Empty);
+    rpc RunCommand(CommandParams) returns (FulcrumResponse);
     rpc BroadcastChanges(FulcrumHistory) returns (FulcrumHistory);
 }
 
@@ -49,5 +49,12 @@ message FulcrumHistory {
     repeated CommandParams history = 1;
 }
 
+// Simple message that contains the response from a fulcrum server 
+// (or broker in the first interaction from clients)
+message FulcrumResponse {
+    optional string fulcrum_redirect_addr = 1;          // fulcrum server address for informants
+    optional uint32 num_of_rebels = 2;                  // number of rebels for Leia
+    optional TimeVector time_vector = 3;                // used by informants in a read-your-writes operation
+}
 
 message Empty {}
