@@ -75,15 +75,16 @@ func ExecuteCommand(command *pb.Command, planet string, city string, value inter
 
 }
 
-func inter() {
-	// Temp function
-	var input string
+func ConsoleInteraction() {
+	// Interface between user & program
+	fmt.Print("Saludos Informante\n")
+
 	for {
-		fmt.Scan(&input)
-		log.Log(&f, "received input from user: %s", input)
-		command, planet, city, rebels, err := util.ReadUserInput(input)
+		log.Log(&f, "<ConsoleInteraction> ")
+		command, planet, city, value, err := util.ReadUserInput("Ingresa el comando y argumentos que quieres usar:\n")
+		log.Log(&f, "<consoleInteraction> Parsed command: %s %s %s %s", command, planet, city, value)
 		log.FailOnError(&f, err, "failed to read user input")
-		ExecuteCommand(command, planet, city, rebels)
+		ExecuteCommand(command, planet, city, value)
 	}
 }
 
@@ -105,7 +106,7 @@ func Run(informantId int) {
 
 		clients[fulcrumAddress] = &Client{Client: client}
 	}
-	go inter()
+	go ConsoleInteraction()
 
 	forever := make(chan bool)
 	<-forever
