@@ -5,9 +5,11 @@ import (
 	"context"
 	"dist/common/log"
 	"dist/pb"
-	"math/rand"
+	"errors"
+	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -35,10 +37,12 @@ func ReadLines(filename string, readLineCallback func(string) bool) (bool, error
 	fileExisted := log.FileExists(filename)
 
 	file, err := os.OpenFile(filename, log.LstdAppendFlags, 0600)
-	defer file.Close()
+
 	if err != nil {
 		return fileExisted, err
 	}
+
+	defer file.Close()
 
 	shouldStop := false
 	scanner := bufio.NewScanner(file)
@@ -60,10 +64,12 @@ func WriteLines(filename string, lines ...string) (bool, error) {
 	fileExisted := log.FileExists(filename)
 
 	file, err := os.OpenFile(filename, log.LstdAppendFlags, 0600)
-	defer file.Close()
+
 	if err != nil {
 		return fileExisted, err
 	}
+
+	defer file.Close()
 
 	finalString := ""
 	for _, line := range lines {
@@ -91,12 +97,38 @@ func DeleteFile(filename string) bool {
 	return false
 }
 
-func ReadUserInput(msg string, a ...interface{}) (*pb.Command, string, string, interface{}, error) {
-	// finalMsg := fmt.Sprintf(msg, a...)
+// Read user input with a given message passed to user
+func ReadUserInput(f *string, msg string) (*pb.Command, string, string, interface{}, error) {
+	var cmd *pb.Command
+	var planet, city string
+	var numRebels int
+	var err error
 
-	/* code */
+	fmt.Printf("%v ", msg)
+	reader := bufio.NewReader(os.Stdin)
+	line, err := reader.ReadString('\n')
 
-	return pb.Command_ADD_CITY.Enum(), "planet", "city", 0, nil
+	log.FailOnError(f, err, "Problem at ReadUserInput while reading line")
+
+	line = strings.TrimSuffix(line, "\n")
+	strs := strings.Split(line, " ")
+
+	switch len(strs) {
+	case 4:
+		numRebels = StringToInt(strs[3])
+	case 3:
+		numRebels = -1
+	default:
+		errStr := "incorrect number of params in user input"
+		log.Print(f, errStr)
+		err = errors.New(errStr)
+	}
+
+	cmd = pb.CommandFromString(strs[0])
+	planet = strs[1]
+	city = strs[2]
+
+	return cmd, planet, city, numRebels, err
 }
 
 func GetContext() (context.Context, context.CancelFunc) {
@@ -115,10 +147,4 @@ func StringToInt(value string) int {
 // Used when setting values in a protobuf object
 func StringToUint32(value string) uint32 {
 	return uint32(StringToInt(value))
-}
-
-// Return a random number within [min, max] both inclusive.
-func RandInt(min int, max int) int {
-	rand.Seed(time.Now().UnixNano())
-	return rand.Intn(max-min) + min
 }
