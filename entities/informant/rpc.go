@@ -16,15 +16,15 @@ type Server struct {
 func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb.FulcrumResponse, error) {
 	log.Log(&f, "[server:RunCommand] Called with argument: command=\"%v\"", command.String())
 
-	switch command.Command.Enum() {
+	switch *command.Command {
 
-	case pb.Command_ADD_CITY.Enum():
+	case pb.Command_ADD_CITY:
 
-	case pb.Command_UPDATE_NAME.Enum():
+	case pb.Command_UPDATE_NAME:
 
-	case pb.Command_UPDATE_NUMBER.Enum():
+	case pb.Command_UPDATE_NUMBER:
 
-	case pb.Command_DELETE_CITY.Enum():
+	case pb.Command_DELETE_CITY:
 	}
 
 	return &pb.FulcrumResponse{}, nil

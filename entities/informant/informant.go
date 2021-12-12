@@ -17,10 +17,7 @@ var (
 
 func ExecuteCommand(command *pb.Command, planet string, city string, value interface{}) {
 	// Send (command, planet, city, value) to Broker
-	// Recieve fulcrum server's address
-
-	// Send (command, planet, city, value) to fulcrum
-	// Recieve time vector, associated with that planet
+	// Receive fulcrum server's address
 
 	var fulcrumResponse *pb.FulcrumResponse
 
@@ -30,9 +27,15 @@ func ExecuteCommand(command *pb.Command, planet string, city string, value inter
 		Command: command,
 	})
 
+	// Send (command, planet, city, value) to fulcrum
+	// Receive time vector, associated with that planet
 	fulcrum := clients[*addressRes.FulcrumRedirectAddr]
-	switch command {
-	case pb.Command_ADD_CITY.Enum():
+
+	log.Log(&f, "<ExecuteCommand> sending %s command to address %s", command, addressRes.FulcrumRedirectAddr)
+	log.Log(&f, "%s, %s, %s, %s", pb.Command_ADD_CITY, pb.Command_UPDATE_NAME, pb.Command_UPDATE_NAME, pb.Command_DELETE_CITY)
+	switch *command.Enum() {
+
+	case pb.Command_ADD_CITY:
 		number, err := strconv.Atoi(str)
 		rebelNumber := uint32(number)
 		log.FailOnError(&f, err, "Failed to convert string to int (number of rebels")
@@ -42,14 +45,14 @@ func ExecuteCommand(command *pb.Command, planet string, city string, value inter
 			CityName:       &city,
 			NewNumOfRebels: &rebelNumber,
 		})
-	case pb.Command_UPDATE_NAME.Enum():
+	case pb.Command_UPDATE_NAME:
 		fulcrumResponse = fulcrum.RunCommand(&pb.CommandParams{
 			Command:     command,
 			PlanetName:  &planet,
 			CityName:    &city,
 			NewCityName: &str,
 		})
-	case pb.Command_UPDATE_NUMBER.Enum():
+	case pb.Command_UPDATE_NUMBER:
 		number, err := strconv.Atoi(str)
 		rebelNumber := uint32(number)
 		log.FailOnError(&f, err, "Failed to convert string to int (number of rebels")
@@ -59,7 +62,7 @@ func ExecuteCommand(command *pb.Command, planet string, city string, value inter
 			CityName:       &city,
 			NewNumOfRebels: &rebelNumber,
 		})
-	case pb.Command_DELETE_CITY.Enum():
+	case pb.Command_DELETE_CITY:
 		fulcrumResponse = fulcrum.RunCommand(&pb.CommandParams{
 			Command:    command,
 			PlanetName: &planet,
