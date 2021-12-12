@@ -28,10 +28,10 @@ type GrpcClient struct {
 }
 
 type CommandHistory struct {
-	command        pb.Command
-	city           string
-	fulcrumAddress string
-	timeVector     TimeVector
+	Command        pb.Command
+	City           string
+	FulcrumAddress string
+	TimeVector     TimeVector
 }
 
 type Planet = string

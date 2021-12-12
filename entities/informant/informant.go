@@ -10,9 +10,10 @@ import (
 )
 
 var (
-	id      int
-	f       = ""
-	clients = make(map[string]*Client)
+	id            int
+	f             = ""
+	clients       = make(map[string]*Client)
+	planetHistory = make(map[data.Planet][]data.CommandHistory)
 )
 
 func ExecuteCommand(command *pb.Command, planet string, city string, value interface{}) {
@@ -21,19 +22,29 @@ func ExecuteCommand(command *pb.Command, planet string, city string, value inter
 	fn := "<ExecuteCommand>"
 	var fulcrumResponse *pb.FulcrumResponse
 
+	timeVector := []uint32{0, 0, 0}
+	if len(planetHistory[planet]) == 0 {
+		log.Log(&f, "%s Latest time vector for planet %s: %v", fn, planet, planetHistory[planet])
+
+	} else {
+		log.Log(&f, "%s Latest time vector for planet %s: %v", fn, planet, planetHistory[planet][len(planetHistory[planet])-1])
+
+	}
+
 	str := fmt.Sprintf("%v", value)
 	broker := clients[data.Address.BROKER]
-	addressRes := broker.RunCommand(&pb.CommandParams{
+	fulcrumAddress := broker.RunCommand(&pb.CommandParams{
 		Command: command,
 	}).FulcrumRedirectAddr
 
-	log.Log(&f, "%s Received fulcrum address from broker: %s", fn, *addressRes)
+	log.Log(&f, "%s Received fulcrum address from broker: %s", fn, *fulcrumAddress)
 
 	// Send (command, planet, city, value) to fulcrum
 	// Receive time vector, associated with that planet
-	fulcrum := clients[*addressRes]
+	fulcrum := clients[*fulcrumAddress]
 
 	log.Log(&f, "%s Sending command \"%s\" to fulcrum", fn, command)
+
 	switch *command {
 
 	case pb.Command_ADD_CITY:
@@ -45,13 +56,15 @@ func ExecuteCommand(command *pb.Command, planet string, city string, value inter
 			PlanetName:     &planet,
 			CityName:       &city,
 			NewNumOfRebels: &rebelNumber,
+			LastTimeVector: &pb.TimeVector{Time: timeVector},
 		})
 	case pb.Command_UPDATE_NAME:
 		fulcrumResponse = fulcrum.RunCommand(&pb.CommandParams{
-			Command:     command,
-			PlanetName:  &planet,
-			CityName:    &city,
-			NewCityName: &str,
+			Command:        command,
+			PlanetName:     &planet,
+			CityName:       &city,
+			NewCityName:    &str,
+			LastTimeVector: &pb.TimeVector{Time: timeVector},
 		})
 	case pb.Command_UPDATE_NUMBER:
 		number, err := strconv.Atoi(str)
@@ -62,17 +75,34 @@ func ExecuteCommand(command *pb.Command, planet string, city string, value inter
 			PlanetName:     &planet,
 			CityName:       &city,
 			NewNumOfRebels: &rebelNumber,
+			LastTimeVector: &pb.TimeVector{Time: timeVector},
 		})
 	case pb.Command_DELETE_CITY:
 		fulcrumResponse = fulcrum.RunCommand(&pb.CommandParams{
-			Command:    command,
-			PlanetName: &planet,
-			CityName:   &city,
+			Command:        command,
+			PlanetName:     &planet,
+			CityName:       &city,
+			LastTimeVector: &pb.TimeVector{Time: timeVector},
 		})
 	default:
 		log.Log(&f, "%s Received command unknown to informant", fn)
 	}
-	log.Log(&f, "%s Received time vector: %s", fn, fulcrumResponse.TimeVector)
+	log.Log(&f, "%s Received time vector: %v", fn, fulcrumResponse.TimeVector)
+
+	data := new(data.CommandHistory)
+	data.Command = *command
+	data.City = city
+	data.FulcrumAddress = *fulcrumAddress
+	//DELETE when fuclrumResponse contains non null TimeVector
+	if fulcrumResponse.TimeVector != nil {
+		data.TimeVector.Time = fulcrumResponse.TimeVector.Time
+
+	} else {
+		data.TimeVector.Time = []uint32{1, 1, 1}
+		log.Log(&f, "%s Using default time vector", fn)
+
+	}
+	planetHistory[planet] = append(planetHistory[planet], *data)
 
 }
 
