@@ -6,6 +6,7 @@ import (
 	"dist/common/util"
 	"dist/pb"
 	"fmt"
+	"strconv"
 )
 
 var (
@@ -21,6 +22,54 @@ func ExecuteCommand(command *pb.Command, planet string, city string, value inter
 	// Send (command, planet, city, value) to fulcrum
 	// Recieve time vector, associated with that planet
 
+	var fulcrumResponse *pb.FulcrumResponse
+
+	str := fmt.Sprintf("%v", value)
+	broker := clients[data.Address.BROKER]
+	addressRes := broker.RunCommand(&pb.CommandParams{
+		Command: command,
+	})
+
+	fulcrum := clients[*addressRes.FulcrumRedirectAddr]
+	switch command {
+	case pb.Command_ADD_CITY.Enum():
+		number, err := strconv.Atoi(str)
+		rebelNumber := uint32(number)
+		log.FailOnError(&f, err, "Failed to convert string to int (number of rebels")
+		fulcrumResponse = fulcrum.RunCommand(&pb.CommandParams{
+			Command:        command,
+			PlanetName:     &planet,
+			CityName:       &city,
+			NewNumOfRebels: &rebelNumber,
+		})
+	case pb.Command_UPDATE_NAME.Enum():
+		fulcrumResponse = fulcrum.RunCommand(&pb.CommandParams{
+			Command:     command,
+			PlanetName:  &planet,
+			CityName:    &city,
+			NewCityName: &str,
+		})
+	case pb.Command_UPDATE_NUMBER.Enum():
+		number, err := strconv.Atoi(str)
+		rebelNumber := uint32(number)
+		log.FailOnError(&f, err, "Failed to convert string to int (number of rebels")
+		fulcrumResponse = fulcrum.RunCommand(&pb.CommandParams{
+			Command:        command,
+			PlanetName:     &planet,
+			CityName:       &city,
+			NewNumOfRebels: &rebelNumber,
+		})
+	case pb.Command_DELETE_CITY.Enum():
+		fulcrumResponse = fulcrum.RunCommand(&pb.CommandParams{
+			Command:    command,
+			PlanetName: &planet,
+			CityName:   &city,
+		})
+	default:
+		log.Fatal(&f, "Received command unknown to informant")
+	}
+	log.Log(&f, "Received time vector: %s", fulcrumResponse.TimeVector)
+
 }
 
 func inter() {
@@ -30,6 +79,7 @@ func inter() {
 		fmt.Scan(&input)
 		log.Log(&f, "received input from user: %s", input)
 		command, planet, city, rebels, err := util.ReadUserInput(input)
+		log.FailOnError(&f, err, "failed to read user input")
 		ExecuteCommand(command, planet, city, rebels)
 	}
 }
@@ -52,6 +102,7 @@ func Run(informantId int) {
 
 		clients[fulcrumAddress] = &Client{Client: client}
 	}
+	go inter()
 
 	forever := make(chan bool)
 	<-forever
