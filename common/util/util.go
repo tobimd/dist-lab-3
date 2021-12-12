@@ -116,18 +116,17 @@ func ReadUserInput(f *string, msg string, a ...interface{}) (*pb.Command, string
 	if *cmd == pb.Command_UPDATE_NAME {
 		return cmd, planet, city, strs[3]
 
-		// If command is NOT DeleteCity, then 4th argument is
-		// number of rebels and could be ommited, defaulting to
-		// a value 0
-	} else if *cmd != pb.Command_DELETE_CITY {
+		// If command is either UpdateNumber or AddCity, then 4th
+		// argument is number of rebels and could be ommited,
+		// defaulting to a value 0
+	} else if *cmd == pb.Command_UPDATE_NUMBER || *cmd == pb.Command_ADD_CITY {
 		numRebels := 0
 		if len(strs) == 4 {
 			numRebels = StringToInt(strs[3])
 		}
 		return cmd, planet, city, numRebels
 
-		// Otherwise, the command IS DeleteCity and 4th argument
-		// doesn't matter
+		// Otherwise, the command does not use the 4th argument
 	} else {
 		return cmd, planet, city, nil
 	}
