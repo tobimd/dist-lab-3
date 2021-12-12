@@ -33,7 +33,7 @@ func ExecuteCommand(command *pb.Command, planet string, city string, value inter
 
 	log.Log(&f, "<ExecuteCommand> sending %s command to address %s", command, addressRes.FulcrumRedirectAddr)
 	log.Log(&f, "%s, %s, %s, %s", pb.Command_ADD_CITY, pb.Command_UPDATE_NAME, pb.Command_UPDATE_NAME, pb.Command_DELETE_CITY)
-	switch *command.Enum() {
+	switch *command {
 
 	case pb.Command_ADD_CITY:
 		number, err := strconv.Atoi(str)
