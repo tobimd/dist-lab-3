@@ -13,7 +13,7 @@ type Server struct {
 	pb.UnimplementedCommunicationServer
 }
 
-func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb.Empty, error) {
+func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb.FulcrumResponse, error) {
 	log.Log(&f, "[server:RunCommand] Called with argument: command=\"%v\"", command.String())
 
 	switch command.Command.Enum() {
@@ -27,13 +27,13 @@ func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb
 	case pb.Command_DELETE_CITY.Enum():
 	}
 
-	return &pb.Empty{}, nil
+	return &pb.FulcrumResponse{}, nil
 }
 
 // **** CLIENT FUNCTIONS ****
 type Client data.GrpcClient
 
-func (c *Client) RunCommand(command *pb.CommandParams) *pb.Empty {
+func (c *Client) RunCommand(command *pb.CommandParams) *pb.FulcrumResponse {
 	client := *((*c).Client)
 	log.Log(&f, "[client:RunCommand] Called with argument: command=\"%v\"", command.String())
 
