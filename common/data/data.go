@@ -20,9 +20,19 @@ var (
 )
 
 type TimeVector struct {
-	Time [3]int
+	Time []uint32
 }
 
 type GrpcClient struct {
 	Client *pb.CommunicationClient
 }
+
+type CommandHistory struct {
+	command        pb.Command
+	city           string
+	fulcrumAddress string
+	timeVector     TimeVector
+}
+
+type Planet = string
+type City = string

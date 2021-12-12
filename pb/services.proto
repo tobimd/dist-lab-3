@@ -39,6 +39,7 @@ message CommandParams {
     // merging, and may only be set in the last CommandParams 
     // added for a given planet (because time vectors only 
     // contain) info about the last update made to the planet.
+    // Also used by Informant to comply with read your writes
     optional TimeVector last_time_vector = 7; 
 }
 
