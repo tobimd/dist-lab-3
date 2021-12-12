@@ -98,37 +98,41 @@ func DeleteFile(filename string) bool {
 }
 
 // Read user input with a given message passed to user
-func ReadUserInput(f *string, msg string) (*pb.Command, string, string, interface{}, error) {
-	var cmd *pb.Command
-	var planet, city string
-	var numRebels int
-	var err error
-
-	fmt.Printf("%v ", msg)
+func ReadUserInput(f *string, msg string, a ...interface{}) (*pb.Command, string, string, interface{}) {
+	// Print formatted message to screen and read input
+	log.Print(f, msg, a...)
 	reader := bufio.NewReader(os.Stdin)
 	line, err := reader.ReadString('\n')
-
 	log.FailOnError(f, err, "Problem at ReadUserInput while reading line")
 
+	// Clean input and split arguments
 	line = strings.TrimSuffix(line, "\n")
 	strs := strings.Split(line, " ")
-
-	switch len(strs) {
-	case 4:
-		numRebels = StringToInt(strs[3])
-	case 3:
-		numRebels = -1
-	default:
-		errStr := "incorrect number of params in user input"
-		log.Print(f, errStr)
-		err = errors.New(errStr)
-	}
-
+	
 	cmd = pb.CommandFromString(strs[0])
 	planet = strs[1]
 	city = strs[2]
 
-	return cmd, planet, city, numRebels, err
+	// If command is UpdateName, then the 4th argument is 
+	// the city's new name
+	if *cmd == pb.Command_UPDATE_NAME {
+		return cmd, planet, city, strs[3]
+	
+	// If command is NOT DeleteCity, then 4th argument is 
+	// number of rebels and could be ommited, defaulting to
+	// a value 0
+	} else if *cmd != pb.Command_DELETE_CITY {
+		numRebels := 0
+		if len(strs) == 4 {
+			numRebels = StringToInt(strs[3])
+		}
+		return cmd, planet, city, numRebels
+		
+	// Otherwise, the command IS DeleteCity and 4th argument
+	// doesn't matter
+	} else {
+		return cmd, planet, city, nil
+	}
 }
 
 func GetContext() (context.Context, context.CancelFunc) {
