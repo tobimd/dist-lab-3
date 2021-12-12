@@ -24,9 +24,9 @@ func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb
 
 	randId := rand.Int() % 3
 
-	switch command.Command.Enum() {
+	switch *command.Command {
 
-	case pb.Command_GET_NUMBER_REBELS.Enum():
+	case pb.Command_GET_NUMBER_REBELS:
 		// proxy message between leia and fulcrum servers
 		client := fulcrum_client[randId]
 		cmdResponse := client.RunCommand(command)

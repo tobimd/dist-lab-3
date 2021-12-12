@@ -7,8 +7,10 @@ import (
 	"dist/entities/informant"
 	"dist/entities/leia"
 	"dist/test"
+	"math/rand"
 	"os"
 	"strconv"
+	"time"
 )
 
 var (
@@ -36,6 +38,8 @@ func main() {
 		id, err = strconv.Atoi(argv[3])
 		log.FailOnError(&f, err, "Couldn't convert \"%s\" to a number", argv[3])
 	}
+
+	rand.Seed(time.Now().Unix())
 
 	if cmd == "run" {
 		switch arg {
