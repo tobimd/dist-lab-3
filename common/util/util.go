@@ -5,8 +5,6 @@ import (
 	"context"
 	"dist/common/log"
 	"dist/pb"
-	"errors"
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -108,28 +106,28 @@ func ReadUserInput(f *string, msg string, a ...interface{}) (*pb.Command, string
 	// Clean input and split arguments
 	line = strings.TrimSuffix(line, "\n")
 	strs := strings.Split(line, " ")
-	
-	cmd = pb.CommandFromString(strs[0])
-	planet = strs[1]
-	city = strs[2]
 
-	// If command is UpdateName, then the 4th argument is 
+	cmd := pb.CommandFromString(strs[0])
+	planet := strs[1]
+	city := strs[2]
+
+	// If command is UpdateName, then the 4th argument is
 	// the city's new name
 	if *cmd == pb.Command_UPDATE_NAME {
 		return cmd, planet, city, strs[3]
-	
-	// If command is NOT DeleteCity, then 4th argument is 
-	// number of rebels and could be ommited, defaulting to
-	// a value 0
+
+		// If command is NOT DeleteCity, then 4th argument is
+		// number of rebels and could be ommited, defaulting to
+		// a value 0
 	} else if *cmd != pb.Command_DELETE_CITY {
 		numRebels := 0
 		if len(strs) == 4 {
 			numRebels = StringToInt(strs[3])
 		}
 		return cmd, planet, city, numRebels
-		
-	// Otherwise, the command IS DeleteCity and 4th argument
-	// doesn't matter
+
+		// Otherwise, the command IS DeleteCity and 4th argument
+		// doesn't matter
 	} else {
 		return cmd, planet, city, nil
 	}
