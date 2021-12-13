@@ -20,13 +20,6 @@ enum Command {
     GET_PLANET_TIME = 6;   // [Broker] used internally to get last TimeVector for a given planet on a fulcrum server
 }
 
-message TimeVector {
-    // Max amount of 'time' objects should be 3 because of each
-    // Fulcrum, even if more is allowed due to being a 'repeated'
-    // type of object.
-    repeated uint32 time = 1; 
-}
-
 message CommandParams {
     optional Command command = 1;          // All possible commands that could be used (even if some entities do and some don't)
     optional string planet_name = 2;       // The current planet being affected by the command
@@ -40,7 +33,7 @@ message CommandParams {
     // added for a given planet (because time vectors only 
     // contain) info about the last update made to the planet.
     // Also used by Informant to comply with read your writes
-    optional TimeVector last_time_vector = 7; 
+    optional uint32 last_time_vector = 7; 
 }
 
 // Corresponds to the history of commands being run over a 
@@ -55,7 +48,7 @@ message FulcrumHistory {
 message FulcrumResponse {
     optional string fulcrum_redirect_addr = 1;          // fulcrum server address for informants
     optional uint32 num_of_rebels = 2;                  // number of rebels for Leia
-    repeated TimeVector time_vector = 3;                // used by informants in a read-your-writes operation
+    repeated uint32 time_vector = 3;                // used by informants in a read-your-writes operation
 }
 
 message Empty {}
