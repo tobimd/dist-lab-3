@@ -61,40 +61,39 @@ func SavePlanetData(planet string, city string, numRebels int, storeMethod Metho
 		storeMethod = StoreMethod.Create
 	}
 
-	var fileExisted bool
 	var err error
 
 	switch storeMethod {
 	case StoreMethod.Create:
 		// Write data into file
-		fileExisted, err = util.WriteLines(filename, info)
-		log.Log(&f, "<SavePlanetData> storeMethod is Create, written to file and fileExisted=%v", fileExisted)
+		err = util.WriteLines(filename, info)
+		log.Log(&f, "<SavePlanetData> storeMethod is Create, written to file")
 
 	case StoreMethod.Update:
 		replacedLine := ""
-		fileExisted, err = util.ReplaceLines(filename, func(line string) string {
+		err = util.ReplaceLines(filename, func(line string) string {
 			values := strings.Split(line, " ")
-			if values[2] == city {
+			if values[1] == city {
 				replacedLine = line
 				return info
 			}
 
 			return line
 		})
-		log.Log(&f, "<SavePlanetData> storeMethod is Update, replacedLine=\"%s\", fileExisted=%v", replacedLine, fileExisted)
+		log.Log(&f, "<SavePlanetData> storeMethod is Update, replacedLine=\"%s\"", replacedLine)
 
 	case StoreMethod.Delete:
 		deletedLine := ""
-		fileExisted, err = util.DeleteLines(filename, func(line string) (bool, bool) {
+		err = util.DeleteLines(filename, func(line string) bool {
 			values := strings.Split(line, " ")
-			if values[2] == city {
+			if values[1] == city {
 				deletedLine = line
-				return true, true
+				return true
 			}
 
-			return false, false
+			return false
 		})
-		log.Log(&f, "<SavePlanetData> storeMethod is Delete, deletedLine=\"%s\", fileExisted=%v", deletedLine, fileExisted)
+		log.Log(&f, "<SavePlanetData> storeMethod is Delete, deletedLine=\"%s\"", deletedLine)
 	}
 	log.FailOnError(&f, err, "Couldn't write to file \"%s\"", filename)
 
@@ -126,7 +125,7 @@ func UpdatePlanetLog(command *pb.Command, planet string, city string, value inte
 
 	log.Log(&f, "<UpdatePlanetLog> new line: \"%s\"", info)
 
-	_, err := util.WriteLines(filename, info)
+	err := util.WriteLines(filename, info)
 	log.FailOnError(&f, err, "Couldn't write to file \"%s\"", filename)
 }
 
@@ -178,69 +177,82 @@ func MergeHistories() []*pb.CommandParams {
 	allHistories := make(map[string]fHist, len(planetVectors))
 
 	for i := 0; i < 3; i++ {
-		go func(id int) {
-			switch id {
-			case 0:
-				for planet, vector := range planetVectors {
-					hist := ReadPlanetLog(planet)
+		switch i {
+		case 0:
+			for planet, vector := range planetVectors {
+				hist := ReadPlanetLog(planet)
 
-					// Get previous info if already exists in
-					// allHistories
-					if info, ok := allHistories[planet]; ok {
-						info.f0.hist = hist
-						info.f0.vector = vector
+				// Get previous info if already exists in
+				// allHistories
+				if info, ok := allHistories[planet]; ok {
+					info.f0.hist = hist
+					info.f0.vector = vector
 
-						allHistories[planet] = info
+					allHistories[planet] = info
 
-					} else {
-						allHistories[planet] = fHist{f0: fInfo{
+				} else {
+					allHistories[planet] = fHist{
+						f0: fInfo{
 							hist:   hist,
 							vector: vector,
-						}}
+						},
+						f1: fInfo{vector: []uint32{0, 0, 0}},
+						f2: fInfo{vector: []uint32{0, 0, 0}},
 					}
 				}
-			case 1:
-				for _, cmd := range neighborHistories.hist1 {
-					planet := cmd.GetPlanetName()
-
-					if info, ok := allHistories[planet]; ok {
-						info.f1.hist = append(info.f1.hist, cmd)
-						// Only last cmd in planet has TimeVector set,
-						// so it doesn't matter if previous ones are
-						// are also setting theirs (presumably "0"ed)
-						info.f1.vector = cmd.GetLastTimeVector().GetTime()
-
-						allHistories[planet] = info
-					} else {
-						allHistories[planet] = fHist{f1: fInfo{
-							hist:   []*pb.CommandParams{cmd},
-							vector: cmd.GetLastTimeVector().GetTime(),
-						}}
-					}
-
-				}
-			case 2:
-				for _, cmd := range neighborHistories.hist2 {
-					planet := cmd.GetPlanetName()
-
-					if info, ok := allHistories[planet]; ok {
-						info.f2.hist = append(info.f2.hist, cmd)
-						info.f2.vector = cmd.GetLastTimeVector().GetTime()
-
-						allHistories[planet] = info
-					} else {
-						allHistories[planet] = fHist{f2: fInfo{
-							hist:   []*pb.CommandParams{cmd},
-							vector: cmd.GetLastTimeVector().GetTime(),
-						}}
-					}
-
-				}
+				log.Log(&f, "<MergeHistories> fulcrum id=0 added history for planet \"%s\", vector %d, %d, %d", planet, vector[0], vector[1], vector[2])
 			}
-		}(i)
+		case 1:
+			for _, cmd := range neighborHistories.hist1 {
+				planet := cmd.GetPlanetName()
+				vector := cmd.GetLastTimeVector().GetTime()
+
+				if info, ok := allHistories[planet]; ok {
+					info.f1.hist = append(info.f1.hist, cmd)
+					info.f1.vector = vector
+
+					allHistories[planet] = info
+				} else {
+					allHistories[planet] = fHist{f1: fInfo{
+						hist:   []*pb.CommandParams{cmd},
+						vector: vector,
+					},
+						f0: fInfo{vector: []uint32{0, 0, 0}},
+						f2: fInfo{vector: []uint32{0, 0, 0}},
+					}
+				}
+
+				log.Log(&f, "<MergeHistories> fulcrum id=1 added history for planet \"%s\", vector %d, %d, %d", planet, vector[0], vector[1], vector[2])
+
+			}
+		case 2:
+			for _, cmd := range neighborHistories.hist2 {
+				planet := cmd.GetPlanetName()
+				vector := cmd.GetLastTimeVector().GetTime()
+
+				if info, ok := allHistories[planet]; ok {
+					info.f2.hist = append(info.f2.hist, cmd)
+					info.f2.vector = vector
+
+					allHistories[planet] = info
+				} else {
+					allHistories[planet] = fHist{
+						f2: fInfo{
+							hist:   []*pb.CommandParams{cmd},
+							vector: vector,
+						},
+						f0: fInfo{vector: []uint32{0, 0, 0}},
+						f1: fInfo{vector: []uint32{0, 0, 0}},
+					}
+				}
+				log.Log(&f, "<MergeHistories> fulcrum id=2 added history for planet \"%s\", vector %d, %d, %d", planet, vector[0], vector[1], vector[2])
+
+			}
+		}
 	}
 
-	for _, histories := range allHistories {
+	log.Log(&f, "len(allHistories)=%d", len(allHistories))
+	for planet, histories := range allHistories {
 		vector0 := histories.f0.vector
 		vector1 := histories.f1.vector
 		vector2 := histories.f2.vector
@@ -248,20 +260,24 @@ func MergeHistories() []*pb.CommandParams {
 		// Once all three histories are in memory for a given
 		// planet, we have to merge them into one and add them
 		// to newHistory
-		if vector0.GreaterThan(vector1) && vector0.GreaterThan(vector2) {
+		if vector0.GreaterThanOrEqual(vector1) && vector0.GreaterThanOrEqual(vector2) {
 			// Most updated is vector0
 			newHistory = append(newHistory, histories.f0.hist...)
+			log.Log(&f, "<MergeHistories> vector 0 is greater, so choosing that as history for planet \"%s\"", planet)
 
-		} else if vector1.GreaterThan(vector0) && vector1.GreaterThan(vector2) {
+		} else if vector1.GreaterThanOrEqual(vector0) && vector1.GreaterThanOrEqual(vector2) {
 			// Most updated is vector1
 			newHistory = append(newHistory, histories.f1.hist...)
+			log.Log(&f, "<MergeHistories> vector 1 is greater, so choosing that as history for planet \"%s\"", planet)
 
 		} else {
 			// Most updated is vector2
 			newHistory = append(newHistory, histories.f2.hist...)
+			log.Log(&f, "<MergeHistories> vector 2 is greater, so choosing that as history for planet \"%s\"", planet)
 
 		}
 	}
+	log.Log(&f, "len(newHistory)=%d", len(newHistory))
 
 	return newHistory
 }

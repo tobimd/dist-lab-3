@@ -58,13 +58,11 @@ func ReadLines(filename string, readLineCallback func(string) bool) (bool, error
 // Create file (or append) each line in arguments where '\n' is
 // added at the end of each one.
 // Returns true if file was created before attempting to open.
-func WriteLines(filename string, lines ...string) (bool, error) {
-	fileExisted := log.FileExists(filename)
-
+func WriteLines(filename string, lines ...string) error {
 	file, err := os.OpenFile(filename, log.LstdAppendFlags, 0600)
 
 	if err != nil {
-		return fileExisted, err
+		return err
 	}
 
 	defer file.Close()
@@ -77,7 +75,7 @@ func WriteLines(filename string, lines ...string) (bool, error) {
 	file.WriteString(finalString)
 	file.Sync()
 
-	return fileExisted, nil
+	return nil
 }
 
 // Read through each line of `filename`, and call the function
@@ -87,14 +85,9 @@ func WriteLines(filename string, lines ...string) (bool, error) {
 //
 // Returns true if file was created before attempting to read,
 // false otherwise.
-func ReplaceLines(filename string, replaceCallback func(string) string) (bool, error) {
-	fileExisted := log.FileExists(filename)
+func ReplaceLines(filename string, replaceCallback func(string) string) error {
 
 	file, err := os.OpenFile(filename, log.LstdAppendFlags, 0600)
-
-	if err != nil {
-		return fileExisted, err
-	}
 
 	result := make([]string, 1)
 	scanner := bufio.NewScanner(file)
@@ -106,9 +99,9 @@ func ReplaceLines(filename string, replaceCallback func(string) string) (bool, e
 	}
 	file.Close()
 
-	_, err = WriteLines(filename, result...)
+	err = WriteLines(filename, result...)
 
-	return fileExisted, err
+	return err
 }
 
 // Read through each line of `filename`, and call the function
@@ -119,36 +112,29 @@ func ReplaceLines(filename string, replaceCallback func(string) string) (bool, e
 //
 // Returns true if file was created before attempting to read,
 // false otherwise.
-func DeleteLines(filename string, deleteCallback func(string) (bool, bool)) (bool, error) {
-	fileExisted := log.FileExists(filename)
-
+func DeleteLines(filename string, deleteCallback func(string) bool) error {
 	file, err := os.OpenFile(filename, log.LstdAppendFlags, 0600)
 
 	if err != nil {
-		return fileExisted, err
+		return err
 	}
 
 	result := make([]string, 1)
-	shouldStop := false
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		var include bool
 		text := scanner.Text()
-		include, shouldStop = deleteCallback(text)
+		include = deleteCallback(text)
 
 		if include {
 			result = append(result, text)
 		}
-
-		if shouldStop {
-			break
-		}
 	}
 	file.Close()
 
-	_, err = WriteLines(filename, result...)
+	err = WriteLines(filename, result...)
 
-	return fileExisted, err
+	return err
 }
 
 // Try to delete file if exists. If it doesn't, no errors will
