@@ -4,6 +4,7 @@ package data
 // etc.
 
 import (
+	"dist/common/log"
 	"dist/pb"
 )
 
@@ -22,6 +23,8 @@ var (
 type TimeVector []uint32
 
 func (t TimeVector) GreaterThanOrEqual(other TimeVector) bool {
+	g := "greater than or qequal"
+	log.Log(&g, " %v is greater or equal as %v", t, other)
 	return t[0] >= other[0] && t[1] >= other[1] && t[2] >= other[2]
 }
 
