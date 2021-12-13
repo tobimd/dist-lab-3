@@ -7,6 +7,7 @@ import (
 	"dist/common/util"
 	"dist/pb"
 	"math/rand"
+	"sync"
 
 	"google.golang.org/grpc/peer"
 )
@@ -22,23 +23,32 @@ type Client data.GrpcClient
 func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb.FulcrumResponse, error) {
 	log.Log(&f, "[server:RunCommand] Called with argument: command=\"%v\"", command.String())
 
-	randId := rand.Int() % 3
+	curr_id := GetLatestVector(command.PlanetName)
+
+	log.Log(&f, "[server:RunCommand] Most recent TimeVector for planet %s found in server %d",
+		*command.PlanetName,
+		curr_id,
+	)
 
 	switch *command.Command {
 
 	case pb.Command_GET_NUMBER_REBELS:
-		// proxy message between leia and fulcrum servers
-		client := fulcrum_client[randId]
-		cmdResponse := client.RunCommand(command)
+		// proxy message between leia and fulcrum servers, getting either the most recent version or current one
 		log.Log(&f, "[server:RunCommand] Proxying message for Leia")
+
+		client := fulcrum_client[curr_id]
+		cmdResponse := client.RunCommand(command)
+		cmdResponse.FulcrumRedirectAddr = &data.Address.FULCRUM[curr_id]
+
+		log.Log(&f, "[server:RunCommand] Proxying response for Leia")
 
 		return cmdResponse, nil
 
 	default:
-		// redirect client to fulcrum server address
-		randAddr := data.Address.FULCRUM[randId]
-		peerMd, ok := peer.FromContext(ctx)
+		// redirect client to fulcrum server address with most recent writes or current one
+		randAddr := data.Address.FULCRUM[curr_id]
 
+		peerMd, ok := peer.FromContext(ctx)
 		peerAddr := "NO_ADDR"
 
 		if ok {
@@ -65,4 +75,47 @@ func (c *Client) RunCommand(command *pb.CommandParams) *pb.FulcrumResponse {
 	log.FailOnError(&f, err, "Couldn't call \"RunCommand\" as entity Broker")
 
 	return res
+}
+
+// get all current timevectors from all fulcrum servers
+func GetLatestVector(planet *string) int {
+	var wg sync.WaitGroup
+	var fulcrumNum = 3
+	var timevectors = make(map[int]data.TimeVector, fulcrumNum)
+
+	// get all timevectors from all three fulcrums for a given planet
+	for i := 0; i < fulcrumNum; i++ {
+		wg.Add(i)
+
+		c := fulcrum_client[i]
+
+		go func(i int) {
+			defer wg.Done()
+
+			cmd := pb.CommandParams{
+				Command:    pb.Command_GET_PLANET_TIME.Enum(),
+				PlanetName: planet,
+			}
+
+			resp := c.RunCommand(&cmd)
+			timevectors[i] = resp.TimeVector.Time
+		}(i)
+	}
+
+	wg.Wait()
+
+	randIds := rand.Perm(fulcrumNum)
+
+	// get latest time vector between all three
+	if timevectors[randIds[0]].GreaterThan(timevectors[randIds[1]]) {
+		if timevectors[randIds[0]].GreaterThan(timevectors[randIds[2]]) {
+			return randIds[0]
+		}
+		return randIds[2]
+	} else {
+		if timevectors[randIds[1]].GreaterThan(timevectors[randIds[2]]) {
+			return randIds[1]
+		}
+		return randIds[2]
+	}
 }
