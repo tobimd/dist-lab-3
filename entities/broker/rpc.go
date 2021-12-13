@@ -81,7 +81,7 @@ func (c *Client) RunCommand(command *pb.CommandParams) *pb.FulcrumResponse {
 func GetLatestVector(planet *string) int {
 	var wg sync.WaitGroup
 	var fulcrumNum = 3
-	var timevectors = make(map[int]data.TimeVector, fulcrumNum)
+	var timevectors = make(map[int]data.TimeVector)
 
 	// get all timevectors from all three fulcrums for a given planet
 	for i := 0; i < fulcrumNum; i++ {
@@ -103,6 +103,13 @@ func GetLatestVector(planet *string) int {
 	}
 
 	wg.Wait()
+
+	// handle border cases when fulcrum servers have just started running
+	for i := 0; i < fulcrumNum; i++ {
+		if len(timevectors[i]) == 0 {
+			timevectors[i] = data.TimeVector{0, 0, 0}
+		}
+	}
 
 	randIds := rand.Perm(fulcrumNum)
 
