@@ -46,6 +46,7 @@ func ExecuteCommand(command *pb.Command, planet string, city string, value inter
 	log.Log(&f, "%s Sending command \"%s\" to fulcrum", fn, command)
 
 	switch *command {
+	// Sends necessary parameters to command executed
 
 	case pb.Command_ADD_CITY:
 		number, err := strconv.Atoi(str)
@@ -85,17 +86,18 @@ func ExecuteCommand(command *pb.Command, planet string, city string, value inter
 			LastTimeVector: &pb.TimeVector{Time: timeVector},
 		})
 	default:
+		// Stops if command was not recognized
 		log.Log(&f, "%s Received command unknown to informant", fn)
 	}
-	log.Log(&f, "%s Received time vector: %v", fn, fulcrumResponse.TimeVector)
+	log.Log(&f, "%s Received time vector: %v", fn, fulcrumResponse.SingleTimeVector)
 
 	info := new(data.CommandHistory)
 	info.Command = *command
 	info.City = city
 	info.FulcrumAddress = *fulcrumAddress
 	//DELETE when fuclrumResponse contains non null TimeVector
-	if fulcrumResponse.TimeVector != nil {
-		info.TimeVector = fulcrumResponse.TimeVector.Time
+	if fulcrumResponse.SingleTimeVector != nil {
+		info.TimeVector = fulcrumResponse.SingleTimeVector.Time
 
 	} else {
 		info.TimeVector = []uint32{1, 1, 1}
