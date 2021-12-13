@@ -121,7 +121,6 @@ func ConsoleInteraction() {
 func Run(informantId int) {
 	id = informantId
 	f = fmt.Sprintf("informant_%d.log", id)
-	util.SetupServer(&f, data.Address.INFORMANT[id], &Server{})
 
 	// Setup all four clients with broker and three fulcrums
 	conn, client := util.SetupClient(&f, data.Address.BROKER)
