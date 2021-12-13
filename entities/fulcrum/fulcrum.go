@@ -72,14 +72,14 @@ func SavePlanetData(planet string, city string, numRebels int, storeMethod Metho
 
 	case StoreMethod.Update:
 		replacedLine := ""
-		fileExisted, err = util.ReplaceLines(filename, func(line string) (string, bool) {
+		fileExisted, err = util.ReplaceLines(filename, func(line string) string {
 			values := strings.Split(line, " ")
-			if values[1] == city {
+			if values[2] == city {
 				replacedLine = line
-				return info, true
+				return info
 			}
 
-			return line, false
+			return line
 		})
 		log.Log(&f, "<SavePlanetData> storeMethod is Update, replacedLine=\"%s\", fileExisted=%v", replacedLine, fileExisted)
 
@@ -87,7 +87,7 @@ func SavePlanetData(planet string, city string, numRebels int, storeMethod Metho
 		deletedLine := ""
 		fileExisted, err = util.DeleteLines(filename, func(line string) (bool, bool) {
 			values := strings.Split(line, " ")
-			if values[1] == city {
+			if values[2] == city {
 				deletedLine = line
 				return true, true
 			}
@@ -100,7 +100,7 @@ func SavePlanetData(planet string, city string, numRebels int, storeMethod Metho
 
 	// Create time vector for new planet, because there was no
 	// file for it before
-	if !fileExisted {
+	if _, ok := planetVectors[planet]; !ok {
 		planetVectors[planet] = data.TimeVector{0, 0, 0}
 	}
 

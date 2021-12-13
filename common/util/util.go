@@ -87,7 +87,7 @@ func WriteLines(filename string, lines ...string) (bool, error) {
 //
 // Returns true if file was created before attempting to read,
 // false otherwise.
-func ReplaceLines(filename string, replaceCallback func(string) (string, bool)) (bool, error) {
+func ReplaceLines(filename string, replaceCallback func(string) string) (bool, error) {
 	fileExisted := log.FileExists(filename)
 
 	file, err := os.OpenFile(filename, log.LstdAppendFlags, 0600)
@@ -97,17 +97,12 @@ func ReplaceLines(filename string, replaceCallback func(string) (string, bool)) 
 	}
 
 	result := make([]string, 1)
-	shouldStop := false
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		var repl string
-		repl, shouldStop = replaceCallback(scanner.Text())
+		repl := replaceCallback(scanner.Text())
 
 		result = append(result, repl)
 
-		if shouldStop {
-			break
-		}
 	}
 	file.Close()
 

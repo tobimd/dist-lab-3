@@ -89,15 +89,15 @@ func ExecuteCommand(command *pb.Command, planet string, city string, value inter
 		// Stops if command was not recognized
 		log.Log(&f, "%s Received command unknown to informant", fn)
 	}
-	log.Log(&f, "%s Received time vector: %v", fn, fulcrumResponse.SingleTimeVector)
+	log.Log(&f, "%s Received time vector: %v", fn, fulcrumResponse.TimeVector)
 
 	info := new(data.CommandHistory)
 	info.Command = *command
 	info.City = city
 	info.FulcrumAddress = *fulcrumAddress
 	//DELETE when fuclrumResponse contains non null TimeVector
-	if fulcrumResponse.SingleTimeVector != nil {
-		info.TimeVector = fulcrumResponse.SingleTimeVector.Time
+	if fulcrumResponse.TimeVector != nil {
+		info.TimeVector = fulcrumResponse.TimeVector.Time
 
 	} else {
 		info.TimeVector = []uint32{1, 1, 1}

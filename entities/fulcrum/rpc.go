@@ -20,11 +20,32 @@ func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb
 
 	case pb.Command_ADD_CITY:
 
+		log.Log(&f, "Adding city: %v", command)
+		SavePlanetData(command.GetPlanetName(), command.GetCityName(), int(command.GetNewNumOfRebels()), StoreMethod.Create)
+		UpdatePlanetLog(command.Command, command.GetPlanetName(), command.GetCityName(), command.GetNewNumOfRebels())
+
 	case pb.Command_UPDATE_NAME:
+
+		log.Log(&f, "Updating city: %v", command)
+
+		if command.NumOfRebels == nil {
+			log.Print(&f, "nil nil")
+		}
+		SavePlanetData(command.GetPlanetName(), command.GetCityName(), int(command.GetNewNumOfRebels()), StoreMethod.Update)
+		UpdatePlanetLog(command.Command, command.GetPlanetName(), command.GetCityName(), command.GetNewCityName())
 
 	case pb.Command_UPDATE_NUMBER:
 
+		log.Log(&f, "Updating rebels: %v", command)
+
+		SavePlanetData(*command.PlanetName, command.GetCityName(), int(command.GetNewNumOfRebels()), StoreMethod.Update)
+		UpdatePlanetLog(command.Command, command.GetPlanetName(), command.GetCityName(), command.GetNewNumOfRebels())
+
 	case pb.Command_DELETE_CITY:
+
+		log.Log(&f, "Deleting city: %v", command)
+		SavePlanetData(*command.PlanetName, *command.CityName, int(*command.NewNumOfRebels), StoreMethod.Delete)
+		UpdatePlanetLog(command.Command, *command.PlanetName, *command.CityName, command.NewNumOfRebels)
 
 	case pb.Command_CHECK_CONSISTENCY:
 		// When recieving this command, gather all history from
