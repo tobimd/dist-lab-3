@@ -80,6 +80,82 @@ func WriteLines(filename string, lines ...string) (bool, error) {
 	return fileExisted, nil
 }
 
+// Read through each line of `filename`, and call the function
+// `replaceCallback` using the current line as a parameter, which
+// should return the line replacement and a boolean value that
+// tells this function to stop reading lines and just save.
+//
+// Returns true if file was created before attempting to read,
+// false otherwise.
+func ReplaceLines(filename string, replaceCallback func(string) (string, bool)) (bool, error) {
+	fileExisted := log.FileExists(filename)
+
+	file, err := os.OpenFile(filename, log.LstdAppendFlags, 0600)
+
+	if err != nil {
+		return fileExisted, err
+	}
+
+	result := make([]string, 1)
+	shouldStop := false
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		var repl string
+		repl, shouldStop = replaceCallback(scanner.Text())
+
+		result = append(result, repl)
+
+		if shouldStop {
+			break
+		}
+	}
+	file.Close()
+
+	_, err = WriteLines(filename, result...)
+
+	return fileExisted, err
+}
+
+// Read through each line of `filename`, and call the function
+// `deleteCallback` using the current line as a parameter, which
+// should return the a boolean value that tells this function to
+// delete de current line and another to stop reading lines and
+// just save.
+//
+// Returns true if file was created before attempting to read,
+// false otherwise.
+func DeleteLines(filename string, deleteCallback func(string) (bool, bool)) (bool, error) {
+	fileExisted := log.FileExists(filename)
+
+	file, err := os.OpenFile(filename, log.LstdAppendFlags, 0600)
+
+	if err != nil {
+		return fileExisted, err
+	}
+
+	result := make([]string, 1)
+	shouldStop := false
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		var include bool
+		text := scanner.Text()
+		include, shouldStop = deleteCallback(text)
+
+		if include {
+			result = append(result, text)
+		}
+
+		if shouldStop {
+			break
+		}
+	}
+	file.Close()
+
+	_, err = WriteLines(filename, result...)
+
+	return fileExisted, err
+}
+
 // Try to delete file if exists. If it doesn't, no errors will
 // be raised and false will be returned. Otherwise, return true
 func DeleteFile(filename string) bool {

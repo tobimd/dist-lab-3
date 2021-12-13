@@ -28,7 +28,7 @@ var (
 	// When using 'SavePlanetData', determine wether to append
 	// to the planet's history file, or rewrite it completely
 	// which is used when merging.
-	StoreMethod = struct{ Append, Rewrite Method }{Append: 0, Rewrite: 1}
+	StoreMethod = struct{ Create, Update, Delete, Rewrite Method }{Create: 0, Update: 1, Delete: 2, Rewrite: 3}
 
 	// When leader fulcrum (id=0) tells neighbors to send their
 	// history to it, the server function BroadcastChanges will
@@ -49,16 +49,53 @@ type Method uint8
 // "5", all info is stored in the following way:
 //     -- Tatooine.txt: Tatooine Mos_Eisley 5
 func SavePlanetData(planet string, city string, numRebels int, storeMethod Method) data.TimeVector {
+	log.Log(&f, "<SavePlanetData(planet:\"%s\", city:\"%s\", numRebels:%d, storeMethod:\"%v\")>", planet, city, numRebels, storeMethod)
+
 	// Set the filename and the data to save
 	filename := planet + ".txt"
 	info := fmt.Sprintf("%s %s %d", planet, city, numRebels)
 
 	if storeMethod == StoreMethod.Rewrite {
+		log.Log(&f, "<SavePlanetData> Because storeMethod is Rewrite, delete file and set storeMethod to Create")
 		util.DeleteFile(filename)
+		storeMethod = StoreMethod.Create
 	}
 
-	// Write data into file
-	fileExisted, err := util.WriteLines(filename, info)
+	var fileExisted bool
+	var err error
+
+	switch storeMethod {
+	case StoreMethod.Create:
+		// Write data into file
+		fileExisted, err = util.WriteLines(filename, info)
+		log.Log(&f, "<SavePlanetData> storeMethod is Create, written to file and fileExisted=%v", fileExisted)
+
+	case StoreMethod.Update:
+		replacedLine := ""
+		fileExisted, err = util.ReplaceLines(filename, func(line string) (string, bool) {
+			values := strings.Split(line, " ")
+			if values[1] == city {
+				replacedLine = line
+				return info, true
+			}
+
+			return line, false
+		})
+		log.Log(&f, "<SavePlanetData> storeMethod is Update, replacedLine=\"%s\", fileExisted=%v", replacedLine, fileExisted)
+
+	case StoreMethod.Delete:
+		deletedLine := ""
+		fileExisted, err = util.DeleteLines(filename, func(line string) (bool, bool) {
+			values := strings.Split(line, " ")
+			if values[1] == city {
+				deletedLine = line
+				return true, true
+			}
+
+			return false, false
+		})
+		log.Log(&f, "<SavePlanetData> storeMethod is Delete, deletedLine=\"%s\", fileExisted=%v", deletedLine, fileExisted)
+	}
 	log.FailOnError(&f, err, "Couldn't write to file \"%s\"", filename)
 
 	// Create time vector for new planet, because there was no
@@ -70,11 +107,14 @@ func SavePlanetData(planet string, city string, numRebels int, storeMethod Metho
 	// Update time vector for that planet
 	planetVectors[planet][id] += 1
 
+	log.Log(&f, "<SavePlanetData> time vector for planet is now [ %d, %d, %d ]", planetVectors[planet][0], planetVectors[planet][1], planetVectors[planet][2])
 	// Return the corresponding time vector
 	return planetVectors[planet]
 }
 
 func UpdatePlanetLog(command *pb.Command, planet string, city string, value interface{}) {
+	log.Log(&f, "<UpdatePlanetLog(command: %v, planet:\"%s\", city:\"%s\", value: %v)>", *command, planet, city, value)
+
 	filename := fmt.Sprintf("log.%s.txt", planet)
 	info := ""
 
@@ -83,6 +123,8 @@ func UpdatePlanetLog(command *pb.Command, planet string, city string, value inte
 	} else {
 		info = fmt.Sprintf("%s %s %s", command.ToString(), planet, city)
 	}
+
+	log.Log(&f, "<UpdatePlanetLog> new line: \"%s\"", info)
 
 	_, err := util.WriteLines(filename, info)
 	log.FailOnError(&f, err, "Couldn't write to file \"%s\"", filename)

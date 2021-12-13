@@ -123,7 +123,7 @@ func (c *Client) BroadcastChanges(history *pb.FulcrumHistory) {
 		city := history.GetCityName()
 		numRebels := int(history.GetNumOfRebels())
 
-		method := StoreMethod.Append
+		method := StoreMethod.Create
 		if planet != currPlanet {
 			method = StoreMethod.Rewrite
 			currPlanet = planet

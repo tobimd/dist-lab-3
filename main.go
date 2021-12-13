@@ -6,7 +6,6 @@ import (
 	"dist/entities/fulcrum"
 	"dist/entities/informant"
 	"dist/entities/leia"
-	"dist/test"
 	"math/rand"
 	"os"
 	"strconv"
@@ -73,8 +72,6 @@ func main() {
 		if testNumber < 0 {
 			log.Fatal(&f, "Please make sure that a valid test number is given (0, 1, ...)")
 		}
-
-		test.Run(testNumber)
 
 	} else {
 		showHelp()
