@@ -6,6 +6,7 @@ import (
 	"dist/common/log"
 	"dist/common/util"
 	"dist/pb"
+	"errors"
 )
 
 // **** SERVER FUNCTIONS ****
@@ -16,36 +17,48 @@ type Server struct {
 func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb.FulcrumResponse, error) {
 	log.Log(&f, "[server:RunCommand] Called with argument: command=\"%v\"", command.String())
 
+	var planet string
+
 	switch *command.Command {
 
 	case pb.Command_ADD_CITY:
 
 		log.Log(&f, "Adding city: %v", command)
-		SavePlanetData(command.GetPlanetName(), command.GetCityName(), int(command.GetNewNumOfRebels()), StoreMethod.Create)
-		UpdatePlanetLog(command.Command, command.GetPlanetName(), command.GetCityName(), command.GetNewNumOfRebels())
+
+		planet = command.GetPlanetName()
+
+		SavePlanetData(planet, command.GetCityName(), int(command.GetNewNumOfRebels()), StoreMethod.Create)
+		UpdatePlanetLog(command.Command, planet, command.GetCityName(), command.GetNewNumOfRebels())
 
 	case pb.Command_UPDATE_NAME:
 
 		log.Log(&f, "Updating city: %v", command)
 
+		planet = command.GetPlanetName()
+
 		if command.NumOfRebels == nil {
 			log.Print(&f, "nil nil")
 		}
-		SavePlanetData(command.GetPlanetName(), command.GetCityName(), int(command.GetNewNumOfRebels()), StoreMethod.Update)
-		UpdatePlanetLog(command.Command, command.GetPlanetName(), command.GetCityName(), command.GetNewCityName())
+		SavePlanetData(planet, command.GetCityName(), int(command.GetNewNumOfRebels()), StoreMethod.Update)
+		UpdatePlanetLog(command.Command, planet, command.GetCityName(), command.GetNewCityName())
 
 	case pb.Command_UPDATE_NUMBER:
 
 		log.Log(&f, "Updating rebels: %v", command)
 
-		SavePlanetData(*command.PlanetName, command.GetCityName(), int(command.GetNewNumOfRebels()), StoreMethod.Update)
-		UpdatePlanetLog(command.Command, command.GetPlanetName(), command.GetCityName(), command.GetNewNumOfRebels())
+		planet = command.GetPlanetName()
+
+		SavePlanetData(planet, command.GetCityName(), int(command.GetNewNumOfRebels()), StoreMethod.Update)
+		UpdatePlanetLog(command.Command, planet, command.GetCityName(), command.GetNewNumOfRebels())
 
 	case pb.Command_DELETE_CITY:
 
 		log.Log(&f, "Deleting city: %v", command)
-		SavePlanetData(*command.PlanetName, *command.CityName, int(*command.NewNumOfRebels), StoreMethod.Delete)
-		UpdatePlanetLog(command.Command, *command.PlanetName, *command.CityName, command.NewNumOfRebels)
+
+		planet = command.GetPlanetName()
+
+		SavePlanetData(planet, *command.CityName, int(*command.NewNumOfRebels), StoreMethod.Delete)
+		UpdatePlanetLog(command.Command, planet, *command.CityName, command.NewNumOfRebels)
 
 	case pb.Command_CHECK_CONSISTENCY:
 		// When recieving this command, gather all history from
@@ -67,11 +80,22 @@ func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb
 		defer clients[data.Address.FULCRUM[0]].BroadcastChanges(&pb.FulcrumHistory{
 			History: info,
 		})
-		return &pb.FulcrumResponse{}, nil
 
+	case pb.Command_GET_PLANET_TIME:
+		planet = command.GetPlanetName()
+
+		log.Log(&f, "Returning planet %v TimeVector: %v", planet, command)
+
+	default:
+		log.Log(&f, "Unknown command: %v", command)
+
+		return &pb.FulcrumResponse{}, errors.New("unknown command")
 	}
 
-	return &pb.FulcrumResponse{}, nil
+	timevector := pb.TimeVector{Time: planetVectors[planet]}
+	response := pb.FulcrumResponse{TimeVector: &timevector}
+
+	return &response, nil
 }
 
 // Should only be called to server Fulcrum with id 0, because
