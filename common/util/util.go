@@ -92,7 +92,10 @@ func ReplaceLines(filename string, replaceCallback func(string) string) error {
 	result := make([]string, 1)
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		repl := replaceCallback(scanner.Text())
+		text := scanner.Text()
+		log.Log(nil, "<ReplaceLines> current line is \"%s\"", text)
+		repl := replaceCallback(text)
+		log.Log(nil, "<ReplaceLines> returned replacement is \"%s\"", repl)
 
 		result = append(result, repl)
 
@@ -124,7 +127,9 @@ func DeleteLines(filename string, deleteCallback func(string) bool) error {
 	for scanner.Scan() {
 		var include bool
 		text := scanner.Text()
+		log.Log(nil, "<DeleteLines> current line is \"%s\"", text)
 		include = deleteCallback(text)
+		log.Log(nil, "<DeleteLines> line included ? %v", include)
 
 		if include {
 			result = append(result, text)

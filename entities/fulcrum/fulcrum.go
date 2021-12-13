@@ -73,7 +73,7 @@ func SavePlanetData(planet string, city string, numRebels int, storeMethod Metho
 		replacedLine := ""
 		err = util.ReplaceLines(filename, func(line string) string {
 			values := strings.Split(line, " ")
-			if values[1] == city {
+			if values[2] == city {
 				replacedLine = line
 				return info
 			}
@@ -86,7 +86,7 @@ func SavePlanetData(planet string, city string, numRebels int, storeMethod Metho
 		deletedLine := ""
 		err = util.DeleteLines(filename, func(line string) bool {
 			values := strings.Split(line, " ")
-			if values[1] == city {
+			if values[2] == city {
 				deletedLine = line
 				return true
 			}
@@ -306,18 +306,49 @@ func Run(fulcrumId int) {
 	id = fulcrumId
 	f = fmt.Sprintf("fulcrum_%d.log", id)
 
-	util.SetupServer(&f, data.Address.FULCRUM[id], &Server{})
+	planet1 := "planet1"
+	planet2 := "planet2"
+	city1 := "city1"
+	city2 := "city2"
+	city3 := "city3"
+	reb2 := uint32(4)
+	reb3 := uint32(9)
 
-	for i := 1; i < 3; i++ {
-		neighbor := data.Address.FULCRUM[(id+i)%3]
-		conn, client := util.SetupClient(&f, neighbor)
-		defer conn.Close()
+	SavePlanetData(planet1, city1, 1, StoreMethod.Create)
+	UpdatePlanetLog(pb.Command_ADD_CITY.Enum(), planet1, city1, 1)
+	SavePlanetData(planet1, city2, 1, StoreMethod.Create)
+	UpdatePlanetLog(pb.Command_ADD_CITY.Enum(), planet1, city2, 2)
+	SavePlanetData(planet2, city3, 1, StoreMethod.Create)
+	UpdatePlanetLog(pb.Command_ADD_CITY.Enum(), planet2, city3, 3)
 
-		clients[neighbor] = &Client{Client: client}
+	neighborHistories.hist1 = []*pb.CommandParams{
+		{
+			Command:        pb.Command_ADD_CITY.Enum(),
+			PlanetName:     &planet1,
+			CityName:       &city1,
+			NumOfRebels:    &reb3,
+			LastTimeVector: &pb.TimeVector{Time: []uint32{0, 1, 0}},
+		},
 	}
 
-	if id == 0 {
-		go SyncWithEventualConsistency()
+	neighborHistories.hist2 = []*pb.CommandParams{
+		{
+			Command:        pb.Command_ADD_CITY.Enum(),
+			PlanetName:     &planet1,
+			CityName:       &city1,
+			NumOfRebels:    &reb2,
+			LastTimeVector: &pb.TimeVector{Time: []uint32{0, 2, 9}},
+		},
+	}
+
+	h := MergeHistories()
+
+	for _, cmd := range h {
+		p := cmd.GetPlanetName()
+		c := cmd.GetCityName()
+		n := cmd.GetNumOfRebels()
+
+		log.Log(&f, "planet=%s, city=%s, num of rebels=%d", p, c, n)
 	}
 
 	forever := make(chan bool)
