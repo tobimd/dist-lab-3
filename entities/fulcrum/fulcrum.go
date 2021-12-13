@@ -125,10 +125,101 @@ func ReadPlanetLog(planet string) []*pb.CommandParams {
 }
 
 func MergeHistories() []*pb.CommandParams {
-
-	// TODO: Implement merging strategy (using neighborHistories)
-
 	var newHistory []*pb.CommandParams
+
+	type fInfo struct {
+		hist   []*pb.CommandParams
+		vector data.TimeVector
+	}
+	type fHist struct{ f0, f1, f2 fInfo }
+
+	allHistories := make(map[string]fHist, len(planetVectors))
+
+	for i := 0; i < 3; i++ {
+		go func(id int) {
+			switch id {
+			case 0:
+				for planet, vector := range planetVectors {
+					hist := ReadPlanetLog(planet)
+
+					// Get previous info if already exists in
+					// allHistories
+					if info, ok := allHistories[planet]; ok {
+						info.f0.hist = hist
+						info.f0.vector = vector
+
+						allHistories[planet] = info
+
+					} else {
+						allHistories[planet] = fHist{f0: fInfo{
+							hist:   hist,
+							vector: vector,
+						}}
+					}
+				}
+			case 1:
+				for _, cmd := range neighborHistories.hist1 {
+					planet := cmd.GetPlanetName()
+
+					if info, ok := allHistories[planet]; ok {
+						info.f1.hist = append(info.f1.hist, cmd)
+						// Only last cmd in planet has TimeVector set,
+						// so it doesn't matter if previous ones are
+						// are also setting theirs (presumably "0"ed)
+						info.f1.vector = cmd.GetLastTimeVector().GetTime()
+
+						allHistories[planet] = info
+					} else {
+						allHistories[planet] = fHist{f1: fInfo{
+							hist:   []*pb.CommandParams{cmd},
+							vector: cmd.GetLastTimeVector().GetTime(),
+						}}
+					}
+
+				}
+			case 2:
+				for _, cmd := range neighborHistories.hist2 {
+					planet := cmd.GetPlanetName()
+
+					if info, ok := allHistories[planet]; ok {
+						info.f2.hist = append(info.f2.hist, cmd)
+						info.f2.vector = cmd.GetLastTimeVector().GetTime()
+
+						allHistories[planet] = info
+					} else {
+						allHistories[planet] = fHist{f2: fInfo{
+							hist:   []*pb.CommandParams{cmd},
+							vector: cmd.GetLastTimeVector().GetTime(),
+						}}
+					}
+
+				}
+			}
+		}(i)
+	}
+
+	for _, histories := range allHistories {
+		vector0 := histories.f0.vector
+		vector1 := histories.f1.vector
+		vector2 := histories.f2.vector
+
+		// Once all three histories are in memory for a given
+		// planet, we have to merge them into one and add them
+		// to newHistory
+		if vector0.GreaterThan(vector1) && vector0.GreaterThan(vector2) {
+			// Most updated is vector0
+			newHistory = append(newHistory, histories.f0.hist...)
+
+		} else if vector1.GreaterThan(vector0) && vector1.GreaterThan(vector2) {
+			// Most updated is vector1
+			newHistory = append(newHistory, histories.f1.hist...)
+
+		} else {
+			// Most updated is vector2
+			newHistory = append(newHistory, histories.f2.hist...)
+
+		}
+	}
 
 	return newHistory
 }

@@ -21,6 +21,10 @@ var (
 
 type TimeVector []uint32
 
+func (t TimeVector) GreaterThan(other TimeVector) bool {
+	return t[0] > other[0] && t[1] > other[1] && t[2] > other[2]
+}
+
 type GrpcClient struct {
 	Client *pb.CommunicationClient
 }
