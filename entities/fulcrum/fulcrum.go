@@ -48,12 +48,18 @@ type Method uint8
 // For planet "Tatooine", city "Mos Eisley" and number of rebels
 // "5", all info is stored in the following way:
 //     -- Tatooine.txt: Tatooine Mos_Eisley 5
-func SavePlanetData(planet string, city string, numRebels int, storeMethod Method) data.TimeVector {
-	log.Log(&f, "<SavePlanetData(planet:\"%s\", city:\"%s\", numRebels:%d, storeMethod:\"%v\")>", planet, city, numRebels, storeMethod)
+func SavePlanetData(planet string, city string, numRebels int, newCityName string, storeMethod Method) data.TimeVector {
+	log.Log(&f, "<SavePlanetData(planet:\"%s\", city:\"%s\", numRebels:%d, newCityName:%s , storeMethod:\"%v\")>", planet, city, numRebels, newCityName, storeMethod)
 
 	// Set the filename and the data to save
 	filename := planet + ".txt"
-	info := fmt.Sprintf("%s %s %d", planet, city, numRebels)
+	var info string
+
+	if newCityName == "" {
+		info = fmt.Sprintf("%s %s %d", planet, city, numRebels)
+	} else {
+		info = fmt.Sprintf("%s %s", planet, newCityName)
+	}
 
 	if storeMethod == StoreMethod.Rewrite {
 		log.Log(&f, "<SavePlanetData> Because storeMethod is Rewrite, delete file and set storeMethod to Create")
@@ -73,8 +79,13 @@ func SavePlanetData(planet string, city string, numRebels int, storeMethod Metho
 		replacedLine := ""
 		err = util.ReplaceLines(filename, func(line string) string {
 			values := strings.Split(line, " ")
+			log.Log(&f, "values: %v", values)
 			if values[1] == city {
 				replacedLine = line
+				if newCityName != "" {
+					return strings.Join([]string{info, values[2]}, " ")
+				}
+
 				return info
 			}
 
@@ -89,10 +100,10 @@ func SavePlanetData(planet string, city string, numRebels int, storeMethod Metho
 			values := strings.Split(line, " ")
 			if values[1] == city {
 				deletedLine = line
-				return true
+				return false
 			}
 
-			return false
+			return true
 		})
 		log.Log(&f, "<SavePlanetData> storeMethod is Delete, deletedLine=\"%s\"", deletedLine)
 	}
@@ -319,7 +330,7 @@ func Run(fulcrumId int) {
 	}
 
 	if id == 0 {
-		go SyncWithEventualConsistency()
+		//go SyncWithEventualConsistency()
 	}
 
 	forever := make(chan bool)

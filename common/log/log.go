@@ -10,7 +10,7 @@ import (
 
 const (
 	LstdAppendFlags       = os.O_APPEND | os.O_CREATE | os.O_RDWR
-	LstdWriteFlags        = os.O_CREATE | os.O_RDWR
+	LstdWriteFlags        = os.O_CREATE | os.O_RDWR | os.O_TRUNC
 	LstdLogFlags          = log.LstdFlags | log.Lmicroseconds
 	outputDir             = ".logs"
 	formattedLogOutputDir = outputDir + "/%s"

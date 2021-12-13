@@ -27,7 +27,7 @@ func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb
 
 		planet = command.GetPlanetName()
 
-		SavePlanetData(planet, command.GetCityName(), int(command.GetNewNumOfRebels()), StoreMethod.Create)
+		SavePlanetData(planet, command.GetCityName(), int(command.GetNewNumOfRebels()), "", StoreMethod.Create)
 		UpdatePlanetLog(command.Command, planet, command.GetCityName(), command.GetNewNumOfRebels())
 
 	case pb.Command_UPDATE_NAME:
@@ -39,7 +39,10 @@ func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb
 		if command.NumOfRebels == nil {
 			log.Print(&f, "nil nil")
 		}
-		SavePlanetData(planet, command.GetCityName(), int(command.GetNewNumOfRebels()), StoreMethod.Update)
+
+		log.Log(&f, "new city name: %s", command.GetNewCityName())
+
+		SavePlanetData(planet, command.GetCityName(), 0, command.GetNewCityName(), StoreMethod.Update)
 		UpdatePlanetLog(command.Command, planet, command.GetCityName(), command.GetNewCityName())
 
 	case pb.Command_UPDATE_NUMBER:
@@ -48,7 +51,7 @@ func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb
 
 		planet = command.GetPlanetName()
 
-		SavePlanetData(planet, command.GetCityName(), int(command.GetNewNumOfRebels()), StoreMethod.Update)
+		SavePlanetData(planet, command.GetCityName(), int(command.GetNewNumOfRebels()), "", StoreMethod.Update)
 		UpdatePlanetLog(command.Command, planet, command.GetCityName(), command.GetNewNumOfRebels())
 
 	case pb.Command_DELETE_CITY:
@@ -57,8 +60,8 @@ func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb
 
 		planet = command.GetPlanetName()
 
-		SavePlanetData(planet, *command.CityName, int(*command.NewNumOfRebels), StoreMethod.Delete)
-		UpdatePlanetLog(command.Command, planet, *command.CityName, command.NewNumOfRebels)
+		SavePlanetData(planet, command.GetCityName(), int(command.GetNewNumOfRebels()), "", StoreMethod.Delete)
+		UpdatePlanetLog(command.Command, planet, command.GetCityName(), command.GetNewNumOfRebels())
 
 	case pb.Command_CHECK_CONSISTENCY:
 		// When recieving this command, gather all history from
@@ -84,7 +87,7 @@ func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb
 	case pb.Command_GET_PLANET_TIME:
 		planet = command.GetPlanetName()
 
-		log.Log(&f, "Returning planet %v TimeVector: %v", planet, command)
+		log.Log(&f, "Returning planet %v TimeVector: %v", planet, planetVectors[planet])
 
 	default:
 		log.Log(&f, "Unknown command: %v", command)
@@ -95,7 +98,7 @@ func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb
 	timevector := pb.TimeVector{Time: planetVectors[planet]}
 	response := pb.FulcrumResponse{TimeVector: &timevector}
 
-	log.Print(&f, "Response before sending: %+v", planetVectors)
+	log.Print(&f, "PlanetVectors before sending: %+v", planetVectors)
 	log.Print(&f, "Response before sending: %+v", response)
 
 	return &response, nil
@@ -177,6 +180,6 @@ func (c *Client) BroadcastChanges(history *pb.FulcrumHistory) {
 			currPlanet = planet
 		}
 
-		SavePlanetData(planet, city, numRebels, method)
+		SavePlanetData(planet, city, numRebels, "", method)
 	}
 }
