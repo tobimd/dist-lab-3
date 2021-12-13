@@ -5,11 +5,12 @@ import (
 	"dist/common/log"
 	"dist/common/util"
 	"dist/pb"
-	"fmt"
 )
 
 var (
 	f = ""
+
+	cmdHistory = make([]data.CommandHistory, 1)
 )
 
 func Run() {
@@ -22,9 +23,7 @@ func Run() {
 
 	// main client loop
 	for {
-		cmd, planet, city, _, err := util.ReadUserInput(&f, "> ")
-
-		log.FailOnError(&f, err, err.Error())
+		cmd, planet, city, _ := util.ReadUserInput(&f, "> ")
 
 		command := pb.CommandParams{
 			Command:    cmd,
@@ -35,11 +34,19 @@ func Run() {
 		serverResponse := leia_client.RunCommand(&command)
 
 		numRebels := serverResponse.NumOfRebels
-		timeVector := serverResponse.TimeVector
+		timeVector := serverResponse.TimeVector.Time
+		fulcrumAddr := serverResponse.FulcrumRedirectAddr
 
-		fmt.Printf("Number of Rebels: %d\n", *numRebels)
+		event := data.CommandHistory{
+			Command:        *cmd,
+			Planet:         planet,
+			FulcrumAddress: *fulcrumAddr,
+			TimeVector:     timeVector,
+		}
+
+		// save event in command history
+		cmdHistory = append(cmdHistory, event)
+
+		log.Print(&f, "Number of Rebels: %d\n", *numRebels)
 	}
-
-	forever := make(chan bool)
-	<-forever
 }

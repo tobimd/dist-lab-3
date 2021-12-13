@@ -27,6 +27,7 @@ type GrpcClient struct {
 
 type CommandHistory struct {
 	Command        pb.Command
+	Planet         string
 	City           string
 	FulcrumAddress string
 	TimeVector     TimeVector
