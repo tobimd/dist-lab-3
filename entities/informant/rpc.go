@@ -1,34 +1,11 @@
 package informant
 
 import (
-	"context"
 	"dist/common/data"
 	"dist/common/log"
 	"dist/common/util"
 	"dist/pb"
 )
-
-// **** SERVER FUNCTIONS ****
-type Server struct {
-	pb.UnimplementedCommunicationServer
-}
-
-func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb.FulcrumResponse, error) {
-	log.Log(&f, "[server:RunCommand] Called with argument: command=\"%v\"", command.String())
-
-	switch *command.Command {
-
-	case pb.Command_ADD_CITY:
-
-	case pb.Command_UPDATE_NAME:
-
-	case pb.Command_UPDATE_NUMBER:
-
-	case pb.Command_DELETE_CITY:
-	}
-
-	return &pb.FulcrumResponse{}, nil
-}
 
 // **** CLIENT FUNCTIONS ****
 type Client data.GrpcClient
