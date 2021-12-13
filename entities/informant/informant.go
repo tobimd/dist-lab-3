@@ -34,7 +34,8 @@ func ExecuteCommand(command *pb.Command, planet string, city string, value inter
 	str := fmt.Sprintf("%v", value)
 	broker := clients[data.Address.BROKER]
 	fulcrumAddress := broker.RunCommand(&pb.CommandParams{
-		Command: command,
+		LastTimeVector: &pb.TimeVector{Time: timeVector},
+		PlanetName:     &planet,
 	}).FulcrumRedirectAddr
 
 	log.Log(&f, "%s Received fulcrum address from broker: %s", fn, *fulcrumAddress)
@@ -97,6 +98,7 @@ func ExecuteCommand(command *pb.Command, planet string, city string, value inter
 	info.FulcrumAddress = *fulcrumAddress
 	//DELETE when fuclrumResponse contains non null TimeVector
 	if fulcrumResponse.TimeVector != nil {
+		log.Log(&f, "%s response TimeVector: %s", fn, fulcrumResponse.GetTimeVector())
 		info.TimeVector = fulcrumResponse.TimeVector.Time
 
 	} else {
