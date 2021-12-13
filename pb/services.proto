@@ -40,7 +40,7 @@ message CommandParams {
     // added for a given planet (because time vectors only 
     // contain) info about the last update made to the planet.
     // Also used by Informant to comply with read your writes
-    repeated string last_time_vector = 7; 
+    repeated TimeVector last_time_vector = 7; 
 }
 
 // Corresponds to the history of commands being run over a 
