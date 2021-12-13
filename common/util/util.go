@@ -96,7 +96,7 @@ func DeleteFile(filename string) bool {
 }
 
 // Read user input with a given message passed to user
-func ReadUserInput(f *string, msg string, a ...interface{}) (*pb.Command, string, string, interface{}) {
+func ReadUserInput(f *string, msg string, a ...interface{}) (*pb.Command, string, string, string) {
 	// Print formatted message to screen and read input
 	log.Print(f, msg, a...)
 	reader := bufio.NewReader(os.Stdin)
@@ -111,24 +111,14 @@ func ReadUserInput(f *string, msg string, a ...interface{}) (*pb.Command, string
 	planet := strs[1]
 	city := strs[2]
 
-	// If command is UpdateName, then the 4th argument is
-	// the city's new name
-	if *cmd == pb.Command_UPDATE_NAME {
+	if *cmd == pb.Command_UPDATE_NAME || *cmd == pb.Command_UPDATE_NUMBER || *cmd == pb.Command_ADD_CITY {
+		// If command is UpdateName, UpdateNumber or AddCity, then
+		// return the string of the 4th argument
 		return cmd, planet, city, strs[3]
 
-		// If command is either UpdateNumber or AddCity, then 4th
-		// argument is number of rebels and could be ommited,
-		// defaulting to a value 0
-	} else if *cmd == pb.Command_UPDATE_NUMBER || *cmd == pb.Command_ADD_CITY {
-		numRebels := 0
-		if len(strs) == 4 {
-			numRebels = StringToInt(strs[3])
-		}
-		return cmd, planet, city, numRebels
-
-		// Otherwise, the command does not use the 4th argument
 	} else {
-		return cmd, planet, city, nil
+		// Otherwise, the command does not use the 4th argument
+		return cmd, planet, city, ""
 	}
 }
 
