@@ -18,7 +18,6 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CommunicationClient interface {
-	HelloTest(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
 	RunCommand(ctx context.Context, in *CommandParams, opts ...grpc.CallOption) (*FulcrumResponse, error)
 	BroadcastChanges(ctx context.Context, in *FulcrumHistory, opts ...grpc.CallOption) (*FulcrumHistory, error)
 }
@@ -29,15 +28,6 @@ type communicationClient struct {
 
 func NewCommunicationClient(cc grpc.ClientConnInterface) CommunicationClient {
 	return &communicationClient{cc}
-}
-
-func (c *communicationClient) HelloTest(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error) {
-	out := new(Empty)
-	err := c.cc.Invoke(ctx, "/proto.Communication/HelloTest", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *communicationClient) RunCommand(ctx context.Context, in *CommandParams, opts ...grpc.CallOption) (*FulcrumResponse, error) {
@@ -62,7 +52,6 @@ func (c *communicationClient) BroadcastChanges(ctx context.Context, in *FulcrumH
 // All implementations must embed UnimplementedCommunicationServer
 // for forward compatibility
 type CommunicationServer interface {
-	HelloTest(context.Context, *Empty) (*Empty, error)
 	RunCommand(context.Context, *CommandParams) (*FulcrumResponse, error)
 	BroadcastChanges(context.Context, *FulcrumHistory) (*FulcrumHistory, error)
 	mustEmbedUnimplementedCommunicationServer()
@@ -72,9 +61,6 @@ type CommunicationServer interface {
 type UnimplementedCommunicationServer struct {
 }
 
-func (UnimplementedCommunicationServer) HelloTest(context.Context, *Empty) (*Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method HelloTest not implemented")
-}
 func (UnimplementedCommunicationServer) RunCommand(context.Context, *CommandParams) (*FulcrumResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RunCommand not implemented")
 }
@@ -92,24 +78,6 @@ type UnsafeCommunicationServer interface {
 
 func RegisterCommunicationServer(s grpc.ServiceRegistrar, srv CommunicationServer) {
 	s.RegisterService(&Communication_ServiceDesc, srv)
-}
-
-func _Communication_HelloTest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CommunicationServer).HelloTest(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/proto.Communication/HelloTest",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CommunicationServer).HelloTest(ctx, req.(*Empty))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _Communication_RunCommand_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -155,10 +123,6 @@ var Communication_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "proto.Communication",
 	HandlerType: (*CommunicationServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "HelloTest",
-			Handler:    _Communication_HelloTest_Handler,
-		},
 		{
 			MethodName: "RunCommand",
 			Handler:    _Communication_RunCommand_Handler,
