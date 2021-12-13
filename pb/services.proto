@@ -17,6 +17,7 @@ enum Command {
     UPDATE_NUMBER = 3;     // [Informants] used to change number of rebels in a city
     GET_NUMBER_REBELS = 4; // [Leia] return the number of rebels in a given city and planet
     CHECK_CONSISTENCY = 5; // [Fulcrum] used internally to tell other fulcrums to send their history logs
+    GET_PLANET_TIME = 6;   // [Broker] used internally to get last TimeVector for a given planet on a fulcrum server
 }
 
 message TimeVector {
@@ -54,7 +55,7 @@ message FulcrumHistory {
 message FulcrumResponse {
     optional string fulcrum_redirect_addr = 1;          // fulcrum server address for informants
     optional uint32 num_of_rebels = 2;                  // number of rebels for Leia
-    optional TimeVector time_vector = 3;                // used by informants in a read-your-writes operation
+    repeated TimeVector time_vector = 3;                // used by informants in a read-your-writes operation
 }
 
 message Empty {}
