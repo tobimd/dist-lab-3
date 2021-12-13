@@ -22,7 +22,8 @@ func Run() {
 
 	// main client loop
 	for {
-		cmd, planet, city, _ := util.ReadUserInput(&f, "> ")
+
+		cmd, planet, city, _ := util.ReadUserInput(&f, "Leia> ")
 
 		command := pb.CommandParams{
 			Command:    cmd,
@@ -32,18 +33,11 @@ func Run() {
 
 		serverResponse := leia_client.RunCommand(&command)
 
-		log.Log(&f, "Broker Response: %v", *serverResponse)
+		log.Log(&f, "Broker Response: %+v", *serverResponse)
 
-		///////////////////////  Uncomment when broker responds with something... //////////////////////////
-		// numRebels := *serverResponse.NumOfRebels
-		// timeVector := serverResponse.TimeVector.Time
-		// fulcrumAddr := *serverResponse.FulcrumRedirectAddr
-
-		numRebels := 20
-		timeVector := data.TimeVector{1, 1, 1}
-		fulcrumAddr := data.Address.FULCRUM[2]
-
-		log.Log(&f, "%v, %v, %v", numRebels, timeVector, fulcrumAddr)
+		numRebels := *serverResponse.NumOfRebels
+		timeVector := serverResponse.TimeVector.Time
+		fulcrumAddr := *serverResponse.FulcrumRedirectAddr
 
 		event := data.CommandHistory{
 			Command:        *cmd,
@@ -56,7 +50,6 @@ func Run() {
 		cmdHistory = append(cmdHistory, event)
 
 		log.Print(&f, "Number of Rebels: %d\n", numRebels)
-
 		log.Log(&f, "History to date: %+v", cmdHistory)
 	}
 }
