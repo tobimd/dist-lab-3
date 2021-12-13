@@ -95,6 +95,8 @@ func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb
 	timevector := pb.TimeVector{Time: planetVectors[planet]}
 	response := pb.FulcrumResponse{TimeVector: &timevector}
 
+	log.Print(&f, "Response before sending: %+v", response)
+
 	return &response, nil
 }
 
