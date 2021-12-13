@@ -82,7 +82,8 @@ func (c *Client) RunCommand(command *pb.CommandParams) *pb.FulcrumResponse {
 func GetLatestVector(planet *string) int {
 	var wg sync.WaitGroup
 	var fulcrumNum = 3
-	var timevectors = make(map[int]data.TimeVector)
+	var timeVectors = make(map[int]data.TimeVector)
+	var safeTimeVectors = sync.Map{}
 
 	// get all timevectors from all three fulcrums for a given planet
 	for i := 0; i < fulcrumNum; i++ {
@@ -100,31 +101,39 @@ func GetLatestVector(planet *string) int {
 			}
 
 			resp := c.RunCommand(&cmd)
-			timevectors[i] = resp.TimeVector.GetTime()
+			safeTimeVectors.Store(i, resp.TimeVector.GetTime())
 			log.Log(&f, "response vectors %v", resp.TimeVector.Time)
-			log.Log(&f, "inside go routine: %v", timevectors)
 		}(i)
 	}
 	wg.Wait()
-	log.Log(&f, "outside go routine: %v", timevectors)
 
-	// handle border cases when fulcrum servers have just started running
+	// pass vals from concurrent-safe map to regular one for compliance with rest of code,
+	// also handle border cases when fulcrum servers have just started running
 	for i := 0; i < fulcrumNum; i++ {
-		if len(timevectors[i]) == 0 {
-			timevectors[i] = data.TimeVector{0, 0, 0}
+		tm, _ := safeTimeVectors.Load(i)
+
+		// assert is correct TimeVector type and then get underlying value (zero val for type on error)
+		dataTm, ok := tm.(data.TimeVector)
+
+		if !ok || len(dataTm) == 0 {
+			timeVectors[i] = data.TimeVector{0, 0, 0}
+		} else {
+			timeVectors[i] = dataTm
 		}
 	}
+
+	log.Log(&f, "TimeVectors: %v", timeVectors)
 
 	randIds := rand.Perm(fulcrumNum)
 
 	// get latest time vector between all three
-	if timevectors[randIds[0]].GreaterThanOrEqual(timevectors[randIds[1]]) {
-		if timevectors[randIds[0]].GreaterThanOrEqual(timevectors[randIds[2]]) {
+	if timeVectors[randIds[0]].GreaterThanOrEqual(timeVectors[randIds[1]]) {
+		if timeVectors[randIds[0]].GreaterThanOrEqual(timeVectors[randIds[2]]) {
 			return randIds[0]
 		}
 		return randIds[2]
 	} else {
-		if timevectors[randIds[1]].GreaterThanOrEqual(timevectors[randIds[2]]) {
+		if timeVectors[randIds[1]].GreaterThanOrEqual(timeVectors[randIds[2]]) {
 			return randIds[1]
 		}
 		return randIds[2]
