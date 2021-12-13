@@ -7,14 +7,13 @@ import (
 
 var (
 	// log's filename
-	f = ""
+	f = "broker.log"
 
 	// maps fulcrum ids to client objects for comms with fulcrum servers
 	fulcrum_client = make(map[int]*Client)
 )
 
 func Run() {
-	f = "broker.log"
 
 	util.SetupServer(&f, data.Address.BROKER, &Server{})
 

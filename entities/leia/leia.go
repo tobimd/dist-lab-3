@@ -8,13 +8,12 @@ import (
 )
 
 var (
-	f = ""
+	f = "leia.log"
 
 	cmdHistory = make([]data.CommandHistory, 1)
 )
 
 func Run() {
-	f = "leia.log"
 
 	conn, client := util.SetupClient(&f, data.Address.BROKER)
 	defer conn.Close()
