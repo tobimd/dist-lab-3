@@ -46,6 +46,7 @@ func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb
 		defer clients[data.Address.FULCRUM[0]].BroadcastChanges(&pb.FulcrumHistory{
 			History: info,
 		})
+		return &pb.FulcrumResponse{}, nil
 
 	}
 
