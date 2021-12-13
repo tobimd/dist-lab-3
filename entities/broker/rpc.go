@@ -107,13 +107,13 @@ func GetLatestVector(planet *string) int {
 	randIds := rand.Perm(fulcrumNum)
 
 	// get latest time vector between all three
-	if timevectors[randIds[0]].GreaterThan(timevectors[randIds[1]]) {
-		if timevectors[randIds[0]].GreaterThan(timevectors[randIds[2]]) {
+	if timevectors[randIds[0]].GreaterThanOrEqual(timevectors[randIds[1]]) {
+		if timevectors[randIds[0]].GreaterThanOrEqual(timevectors[randIds[2]]) {
 			return randIds[0]
 		}
 		return randIds[2]
 	} else {
-		if timevectors[randIds[1]].GreaterThan(timevectors[randIds[2]]) {
+		if timevectors[randIds[1]].GreaterThanOrEqual(timevectors[randIds[2]]) {
 			return randIds[1]
 		}
 		return randIds[2]
