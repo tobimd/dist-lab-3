@@ -66,27 +66,28 @@ func SavePlanetData(planet string, city string, numRebels int, storeMethod Metho
 	switch storeMethod {
 	case StoreMethod.Create:
 		// Write data into file
-		err = util.WriteLines(filename, info)
+		err = util.WriteLines(filename, false, info)
 		log.Log(&f, "<SavePlanetData> storeMethod is Create, written to file")
 
 	case StoreMethod.Update:
 		replacedLine := ""
 		err = util.ReplaceLines(filename, func(line string) string {
 			values := strings.Split(line, " ")
-			if values[2] == city {
+			if values[1] == city {
 				replacedLine = line
 				return info
 			}
 
 			return line
 		})
-		log.Log(&f, "<SavePlanetData> storeMethod is Update, replacedLine=\"%s\"", replacedLine)
+
+		log.Log(&f, "<SavePlanetData> storeMethod is Update, replacedLine=\"%s\" with \"%s\"", replacedLine, info)
 
 	case StoreMethod.Delete:
 		deletedLine := ""
 		err = util.DeleteLines(filename, func(line string) bool {
 			values := strings.Split(line, " ")
-			if values[2] == city {
+			if values[1] == city {
 				deletedLine = line
 				return true
 			}
@@ -125,7 +126,7 @@ func UpdatePlanetLog(command *pb.Command, planet string, city string, value inte
 
 	log.Log(&f, "<UpdatePlanetLog> new line: \"%s\"", info)
 
-	err := util.WriteLines(filename, info)
+	err := util.WriteLines(filename, false, info)
 	log.FailOnError(&f, err, "Couldn't write to file \"%s\"", filename)
 }
 
@@ -196,8 +197,8 @@ func MergeHistories() []*pb.CommandParams {
 							hist:   hist,
 							vector: vector,
 						},
-						f1: fInfo{vector: []uint32{0, 0, 0}},
-						f2: fInfo{vector: []uint32{0, 0, 0}},
+						f1: fInfo{hist: []*pb.CommandParams{}, vector: []uint32{0, 0, 0}},
+						f2: fInfo{hist: []*pb.CommandParams{}, vector: []uint32{0, 0, 0}},
 					}
 				}
 				log.Log(&f, "<MergeHistories> fulcrum id=0 added history for planet \"%s\", vector %d, %d, %d", planet, vector[0], vector[1], vector[2])
@@ -213,12 +214,13 @@ func MergeHistories() []*pb.CommandParams {
 
 					allHistories[planet] = info
 				} else {
-					allHistories[planet] = fHist{f1: fInfo{
-						hist:   []*pb.CommandParams{cmd},
-						vector: vector,
-					},
-						f0: fInfo{vector: []uint32{0, 0, 0}},
-						f2: fInfo{vector: []uint32{0, 0, 0}},
+					allHistories[planet] = fHist{
+						f1: fInfo{
+							hist:   []*pb.CommandParams{cmd},
+							vector: vector,
+						},
+						f0: fInfo{hist: []*pb.CommandParams{}, vector: []uint32{0, 0, 0}},
+						f2: fInfo{hist: []*pb.CommandParams{}, vector: []uint32{0, 0, 0}},
 					}
 				}
 
@@ -241,8 +243,8 @@ func MergeHistories() []*pb.CommandParams {
 							hist:   []*pb.CommandParams{cmd},
 							vector: vector,
 						},
-						f0: fInfo{vector: []uint32{0, 0, 0}},
-						f1: fInfo{vector: []uint32{0, 0, 0}},
+						f0: fInfo{hist: []*pb.CommandParams{}, vector: []uint32{0, 0, 0}},
+						f1: fInfo{hist: []*pb.CommandParams{}, vector: []uint32{0, 0, 0}},
 					}
 				}
 				log.Log(&f, "<MergeHistories> fulcrum id=2 added history for planet \"%s\", vector %d, %d, %d", planet, vector[0], vector[1], vector[2])

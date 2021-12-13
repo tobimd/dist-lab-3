@@ -31,13 +31,11 @@ func LoadEnvVariables(addrMap *map[string]string) error {
 // that function returns false, then this will stop reading
 // lines.
 // Returns true if file was created before attempting to read.
-func ReadLines(filename string, readLineCallback func(string) bool) (bool, error) {
-	fileExisted := log.FileExists(filename)
-
-	file, err := os.OpenFile(filename, log.LstdAppendFlags, 0600)
+func ReadLines(filename string, readLineCallback func(string) bool) error {
+	file, err := os.OpenFile(filename, log.LstdAppendFlags, 0644)
 
 	if err != nil {
-		return fileExisted, err
+		return err
 	}
 
 	defer file.Close()
@@ -52,14 +50,14 @@ func ReadLines(filename string, readLineCallback func(string) bool) (bool, error
 		}
 	}
 
-	return fileExisted, nil
+	return nil
 }
 
 // Create file (or append) each line in arguments where '\n' is
 // added at the end of each one.
 // Returns true if file was created before attempting to open.
-func WriteLines(filename string, lines ...string) error {
-	file, err := os.OpenFile(filename, log.LstdAppendFlags, 0600)
+func WriteLines(filename string, overwrite bool, lines ...string) error {
+	file, err := os.OpenFile(filename, log.LstdWriteFlags, 0644)
 
 	if err != nil {
 		return err
@@ -86,23 +84,21 @@ func WriteLines(filename string, lines ...string) error {
 // Returns true if file was created before attempting to read,
 // false otherwise.
 func ReplaceLines(filename string, replaceCallback func(string) string) error {
-
-	file, err := os.OpenFile(filename, log.LstdAppendFlags, 0600)
-
 	result := make([]string, 1)
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		text := scanner.Text()
-		log.Log(nil, "<ReplaceLines> current line is \"%s\"", text)
-		repl := replaceCallback(text)
-		log.Log(nil, "<ReplaceLines> returned replacement is \"%s\"", repl)
 
+	ReadLines(filename, func(line string) bool {
+		repl := replaceCallback(line)
 		result = append(result, repl)
+		return false
+	})
 
+	for i, l := range result {
+		if l == "" {
+			result = append(result[:i], result[i+1:]...)
+		}
 	}
-	file.Close()
 
-	err = WriteLines(filename, result...)
+	err := WriteLines(filename, true, result...)
 
 	return err
 }
@@ -116,7 +112,7 @@ func ReplaceLines(filename string, replaceCallback func(string) string) error {
 // Returns true if file was created before attempting to read,
 // false otherwise.
 func DeleteLines(filename string, deleteCallback func(string) bool) error {
-	file, err := os.OpenFile(filename, log.LstdAppendFlags, 0600)
+	file, err := os.OpenFile(filename, log.LstdAppendFlags, 0644)
 
 	if err != nil {
 		return err
@@ -137,7 +133,7 @@ func DeleteLines(filename string, deleteCallback func(string) bool) error {
 	}
 	file.Close()
 
-	err = WriteLines(filename, result...)
+	err = WriteLines(filename, true, result...)
 
 	return err
 }
