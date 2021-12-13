@@ -98,7 +98,7 @@ func GetLatestVector(planet *string) int {
 			}
 
 			resp := c.RunCommand(&cmd)
-			timevectors[i] = resp.TimeVector.Time
+			timevectors[i] = resp.TimeVector.GetTime()
 		}(i)
 	}
 

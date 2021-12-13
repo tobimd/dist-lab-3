@@ -35,9 +35,9 @@ func Run() {
 
 		log.Log(&f, "Broker Response: %+v", *serverResponse)
 
-		numRebels := *serverResponse.NumOfRebels
-		timeVector := serverResponse.TimeVector.Time
-		fulcrumAddr := *serverResponse.FulcrumRedirectAddr
+		numRebels := serverResponse.GetNumOfRebels()
+		timeVector := serverResponse.TimeVector.GetTime()
+		fulcrumAddr := serverResponse.GetFulcrumRedirectAddr()
 
 		event := data.CommandHistory{
 			Command:        *cmd,
