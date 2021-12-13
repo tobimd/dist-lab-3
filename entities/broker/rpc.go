@@ -25,10 +25,11 @@ func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb
 
 	curr_id := GetLatestVector(command.PlanetName)
 
-	log.Log(&f, "[server:RunCommand] Most recent TimeVector for planet %s found in server %d",
-		*command.PlanetName,
-		curr_id,
+	log.Log(&f, "[server:RunCommand] Most recent TimeVector for planet %s found in server",
+		command.GetPlanetName(),
 	)
+
+	log.Log(&f, "%d", curr_id)
 
 	switch *command.Command {
 
@@ -90,6 +91,7 @@ func GetLatestVector(planet *string) int {
 		c := fulcrum_client[i]
 
 		go func(i int) {
+
 			defer wg.Done()
 
 			cmd := pb.CommandParams{
@@ -99,10 +101,12 @@ func GetLatestVector(planet *string) int {
 
 			resp := c.RunCommand(&cmd)
 			timevectors[i] = resp.TimeVector.GetTime()
+			log.Log(&f, "response vectors %v", resp.TimeVector.Time)
+			log.Log(&f, "inside go routine: %v", timevectors)
 		}(i)
 	}
-
 	wg.Wait()
+	log.Log(&f, "outside go routine: %v", timevectors)
 
 	// handle border cases when fulcrum servers have just started running
 	for i := 0; i < fulcrumNum; i++ {
