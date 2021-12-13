@@ -64,13 +64,11 @@ func SavePlanetData(planet string, city string, numRebels int, storeMethod Metho
 	// Create time vector for new planet, because there was no
 	// file for it before
 	if !fileExisted {
-		planetVectors[planet] = data.TimeVector{Time: [3]int{0, 0, 0}}
+		planetVectors[planet] = data.TimeVector{0, 0, 0}
 	}
 
 	// Update time vector for that planet
-	vector := planetVectors[planet]
-	vector.Time[id] += 1
-	planetVectors[planet] = vector
+	planetVectors[planet][id] += 1
 
 	// Return the corresponding time vector
 	return planetVectors[planet]

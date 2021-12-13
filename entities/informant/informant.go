@@ -89,20 +89,20 @@ func ExecuteCommand(command *pb.Command, planet string, city string, value inter
 	}
 	log.Log(&f, "%s Received time vector: %v", fn, fulcrumResponse.TimeVector)
 
-	data := new(data.CommandHistory)
-	data.Command = *command
-	data.City = city
-	data.FulcrumAddress = *fulcrumAddress
+	info := new(data.CommandHistory)
+	info.Command = *command
+	info.City = city
+	info.FulcrumAddress = *fulcrumAddress
 	//DELETE when fuclrumResponse contains non null TimeVector
 	if fulcrumResponse.TimeVector != nil {
-		data.TimeVector.Time = fulcrumResponse.TimeVector.Time
+		info.TimeVector = fulcrumResponse.TimeVector.Time
 
 	} else {
-		data.TimeVector.Time = []uint32{1, 1, 1}
+		info.TimeVector = []uint32{1, 1, 1}
 		log.Log(&f, "%s Using default time vector", fn)
 
 	}
-	planetHistory[planet] = append(planetHistory[planet], *data)
+	planetHistory[planet] = append(planetHistory[planet], *info)
 
 }
 

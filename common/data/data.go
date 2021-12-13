@@ -19,9 +19,7 @@ var (
 	}
 )
 
-type TimeVector struct {
-	Time []uint32
-}
+type TimeVector []uint32
 
 type GrpcClient struct {
 	Client *pb.CommunicationClient

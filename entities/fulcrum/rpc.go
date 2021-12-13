@@ -35,14 +35,9 @@ func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb
 			// Append all updates done to a planet
 			info = append(info, ReadPlanetLog(planet)...)
 
-			// Get the three times for each Fulcrum
-			fTime0 := uint32(vector.Time[0])
-			fTime1 := uint32(vector.Time[1])
-			fTime2 := uint32(vector.Time[2])
-
 			// For the last Command, set LastTimeVector with these
 			info[len(info)-1].LastTimeVector = &pb.TimeVector{
-				Time: []uint32{fTime0, fTime1, fTime2},
+				Time: vector,
 			}
 		}
 
@@ -83,6 +78,8 @@ func (s *Server) BroadcastChanges(ctx context.Context, history *pb.FulcrumHistor
 	<-neighborChangesCh
 
 	newHistory := MergeHistories()
+	neighborHistories.hist1 = []*pb.CommandParams{}
+	neighborHistories.hist2 = []*pb.CommandParams{}
 
 	return &pb.FulcrumHistory{History: newHistory}, nil
 }
