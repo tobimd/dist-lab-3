@@ -57,7 +57,11 @@ func ReadLines(filename string, readLineCallback func(string) bool) error {
 // added at the end of each one.
 // Returns true if file was created before attempting to open.
 func WriteLines(filename string, overwrite bool, lines ...string) error {
-	file, err := os.OpenFile(filename, log.LstdWriteFlags, 0644)
+	flags := log.LstdAppendFlags
+	if overwrite {
+		flags = log.LstdWriteFlags
+	}
+	file, err := os.OpenFile(filename, flags, 0644)
 
 	if err != nil {
 		return err
