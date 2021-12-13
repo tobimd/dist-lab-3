@@ -40,7 +40,7 @@ message CommandParams {
     // added for a given planet (because time vectors only 
     // contain) info about the last update made to the planet.
     // Also used by Informant to comply with read your writes
-    repeated TimeVector last_time_vector = 7; 
+    optional TimeVector last_time_vector = 7; 
 }
 
 // Corresponds to the history of commands being run over a 
@@ -55,7 +55,8 @@ message FulcrumHistory {
 message FulcrumResponse {
     optional string fulcrum_redirect_addr = 1;          // fulcrum server address for informants
     optional uint32 num_of_rebels = 2;                  // number of rebels for Leia
-    repeated TimeVector time_vector = 3;                // used by informants in a read-your-writes operation
+    optional TimeVector single_time_vector = 3;         // used by informants in a read-your-writes operation
+    repeated TimeVector mult_time_vectors = 4;       // used by broker to get all timevectors for a single planet
 }
 
 message Empty {}
