@@ -23,7 +23,7 @@ type Client data.GrpcClient
 func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb.FulcrumResponse, error) {
 	log.Log(&f, "[server:RunCommand] Called with argument: command=\"%v\"", command.String())
 
-	curr_id := GetLatestVector(command.PlanetName)
+	curr_id, allVectors := GetLatestVector(command.PlanetName)
 
 	log.Log(&f, "[server:RunCommand] Most recent TimeVector for planet %s found in server",
 		command.GetPlanetName(),
@@ -46,8 +46,22 @@ func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb
 		return cmdResponse, nil
 
 	default:
+
+		candidates := make([]string, 0)
+
+		informantVector := command.LastTimeVector.GetTime()
+		log.Log(&f, "allVectors=%v, informantVector=%v", allVectors, informantVector)
+
+		for fulcrumId, vector := range allVectors {
+
+			if vector.GreaterThanOrEqual(informantVector) {
+				candidates = append(candidates, data.Address.FULCRUM[fulcrumId])
+			}
+		}
+
 		// redirect client to fulcrum server address with most recent writes or current one
-		randAddr := data.Address.FULCRUM[curr_id]
+		fulcrumAddr := candidates[util.RandInt(0, len(candidates))]
+		log.Log(&f, "Length of candidates for redirecting informant: %d", len(candidates))
 
 		peerMd, ok := peer.FromContext(ctx)
 		peerAddr := "NO_ADDR"
@@ -56,9 +70,9 @@ func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb
 			peerAddr = peerMd.Addr.String()
 		}
 
-		log.Log(&f, "[server:RunCommand] Redirecting informant %v to %v", peerAddr, randAddr)
+		log.Log(&f, "[server:RunCommand] Redirecting informant %v to %v", peerAddr, fulcrumAddr)
 
-		return &pb.FulcrumResponse{FulcrumRedirectAddr: &randAddr}, nil
+		return &pb.FulcrumResponse{FulcrumRedirectAddr: &fulcrumAddr}, nil
 	}
 
 }
@@ -79,7 +93,7 @@ func (c *Client) RunCommand(command *pb.CommandParams) *pb.FulcrumResponse {
 }
 
 // get all current timevectors from all fulcrum servers
-func GetLatestVector(planet *string) int {
+func GetLatestVector(planet *string) (int, map[int]data.TimeVector) {
 	var wg sync.WaitGroup
 	var fulcrumNum = 3
 	var timeVectors = make(map[int]data.TimeVector)
@@ -113,29 +127,32 @@ func GetLatestVector(planet *string) int {
 		tm, _ := safeTimeVectors.Load(i)
 
 		// assert is correct TimeVector type and then get underlying value (zero val for type on error)
-		dataTm, ok := tm.(data.TimeVector)
+		dataTm, ok := tm.([]uint32)
 
 		if !ok || len(dataTm) == 0 {
 			timeVectors[i] = data.TimeVector{0, 0, 0}
 		} else {
-			timeVectors[i] = dataTm
+			timeVectors[i] = data.TimeVector{dataTm[0], dataTm[1], dataTm[2]}
 		}
 	}
 
 	log.Log(&f, "TimeVectors: %v", timeVectors)
 
 	randIds := rand.Perm(fulcrumNum)
+	index := 0
 
 	// get latest time vector between all three
 	if timeVectors[randIds[0]].GreaterThanOrEqual(timeVectors[randIds[1]]) {
-		if timeVectors[randIds[0]].GreaterThanOrEqual(timeVectors[randIds[2]]) {
-			return randIds[0]
+		if !timeVectors[randIds[0]].GreaterThanOrEqual(timeVectors[randIds[2]]) {
+			index = 2
 		}
-		return randIds[2]
 	} else {
 		if timeVectors[randIds[1]].GreaterThanOrEqual(timeVectors[randIds[2]]) {
-			return randIds[1]
+			index = 1
+		} else {
+			index = 2
 		}
-		return randIds[2]
 	}
+
+	return randIds[index], timeVectors
 }

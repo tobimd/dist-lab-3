@@ -108,7 +108,6 @@ func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb
 	response = pb.FulcrumResponse{TimeVector: &timevector}
 
 	log.Print(&f, "PlanetVectors before sending: %+v", planetVectors)
-	log.Print(&f, "Response before sending: %+v", response)
 
 	return &response, nil
 }

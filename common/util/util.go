@@ -5,6 +5,7 @@ import (
 	"context"
 	"dist/common/log"
 	"dist/pb"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
@@ -43,7 +44,9 @@ func ReadLines(filename string, readLineCallback func(string) bool) error {
 	shouldStop := false
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		shouldStop = readLineCallback(scanner.Text())
+		text := scanner.Text()
+		shouldStop = readLineCallback(text)
+		log.Log(nil, "<ReadLines> current line (len=%d): \"%s\"", len(text), text)
 
 		if shouldStop {
 			break
@@ -71,6 +74,10 @@ func WriteLines(filename string, overwrite bool, lines ...string) error {
 
 	finalString := ""
 	for _, line := range lines {
+		if line == "" {
+			continue
+		}
+
 		finalString += line + "\n"
 	}
 
@@ -97,6 +104,7 @@ func ReplaceLines(filename string, replaceCallback func(string) string) error {
 	})
 
 	for i, l := range result {
+		log.Log(nil, "<ReplaceLines (forloop)> line %d has length %d: \"%s\"", i, len(l), l)
 		if l == "" {
 			result = append(result[:i], result[i+1:]...)
 		}
@@ -127,9 +135,9 @@ func DeleteLines(filename string, deleteCallback func(string) bool) error {
 	for scanner.Scan() {
 		var include bool
 		text := scanner.Text()
-		log.Log(nil, "<DeleteLines> current line is \"%s\"", text)
+		log.Log(nil, "<DeleteLines> current line (len=%d): \"%s\"", len(text), text)
+
 		include = deleteCallback(text)
-		log.Log(nil, "<DeleteLines> line included ? %v", include)
 
 		if include {
 			result = append(result, text)
@@ -173,19 +181,15 @@ func ReadUserInput(f *string, msg string, a ...interface{}) (*pb.Command, string
 	planet := strs[1]
 	city := strs[2]
 
-	if *cmd == pb.Command_UPDATE_NAME || *cmd == pb.Command_UPDATE_NUMBER || *cmd == pb.Command_ADD_CITY {
-		rebels := "0"
+	if len(strs) == 4 {
 
-		if len(strs) > 3 {
-			rebels = strs[3]
-		}
 		// If command is UpdateName, UpdateNumber or AddCity, then
 		// return the string of the 4th argument
-		return cmd, planet, city, rebels
+		return cmd, planet, city, strs[3]
 
 	} else {
 		// Otherwise, the command does not use the 4th argument
-		return cmd, planet, city, ""
+		return cmd, planet, city, "0"
 	}
 }
 
@@ -205,4 +209,8 @@ func StringToInt(value string) int {
 // Used when setting values in a protobuf object
 func StringToUint32(value string) uint32 {
 	return uint32(StringToInt(value))
+}
+
+func RandInt(min int, max int) int {
+	return rand.Intn(max-min) + min
 }
