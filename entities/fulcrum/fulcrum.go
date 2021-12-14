@@ -6,6 +6,7 @@ import (
 	"dist/common/util"
 	"dist/pb"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -38,7 +39,7 @@ var (
 	// channel will recieve boolean true when both histories
 	// have been stored
 	neighborChangesCh = make(chan bool)
-	neighborHistories = struct{ hist1, hist2 []*pb.CommandParams }{}
+	neighborHistories = make(map[string][]*pb.CommandParams, 2)
 )
 
 type Method uint8
@@ -167,6 +168,24 @@ func ReadCityData(planet string, city string) uint32 {
 	return rebelNumber
 }
 
+// Checks if city exist on planet registry
+func CityDoesExistOn(planet string, city string) (exist bool) {
+	filename := fmt.Sprintf("%s.txt", planet)
+	exist = false
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		return
+	}
+	util.ReadLines(filename, func(line string) bool {
+		values := strings.Split(line, " ")
+		if values[1] == city {
+			exist = true
+			return true
+		}
+		return false
+	})
+	return
+}
+
 func ReadPlanetLog(planet string) []*pb.CommandParams {
 	filename := fmt.Sprintf("log.%s.txt", planet)
 	info := make([]*pb.CommandParams, 1)
@@ -194,6 +213,7 @@ func ReadPlanetLog(planet string) []*pb.CommandParams {
 				CityName:       &values[2],
 				NewCityName:    &newName,
 				NewNumOfRebels: &newNumberOfRebels,
+				LastTimeVector: nil,
 			})
 
 			return false
@@ -205,120 +225,78 @@ func ReadPlanetLog(planet string) []*pb.CommandParams {
 
 func MergeHistories() []*pb.CommandParams {
 	var newHistory []*pb.CommandParams
-
-	type fInfo struct {
-		hist   []*pb.CommandParams
-		vector data.TimeVector
+	allHistories := [3][]*pb.CommandParams{
+		GetHistory(),
+		neighborHistories[data.Address.FULCRUM[1]],
+		neighborHistories[data.Address.FULCRUM[2]],
 	}
-	type fHist struct{ f0, f1, f2 fInfo }
 
-	allHistories := make(map[string]fHist, len(planetVectors))
+	type FH struct {
+		vector []data.TimeVector
+		hist   [][]*pb.CommandParams
+	}
+
+	info := make(map[string]FH, len(planetVectors))
 
 	for i := 0; i < 3; i++ {
-		switch i {
-		case 0:
-			for planet, vector := range planetVectors {
-				hist := ReadPlanetLog(planet)
+		hist := allHistories[i]
 
-				// Get previous info if already exists in
-				// allHistories
-				if info, ok := allHistories[planet]; ok {
-					info.f0.hist = hist
-					info.f0.vector = vector
+		currHist := make([]*pb.CommandParams, 1)
 
-					allHistories[planet] = info
+		for _, cmdParams := range hist {
+			planet := cmdParams.GetPlanetName()
+			vector := cmdParams.GetLastTimeVector()
 
-				} else {
-					allHistories[planet] = fHist{
-						f0: fInfo{
-							hist:   hist,
-							vector: vector,
-						},
-						f1: fInfo{hist: []*pb.CommandParams{}, vector: []uint32{0, 0, 0}},
-						f2: fInfo{hist: []*pb.CommandParams{}, vector: []uint32{0, 0, 0}},
+			currHist = append(currHist, cmdParams)
+
+			if vector != nil {
+				if _, ok := info[planet]; !ok {
+					fh := FH{
+						hist:   [][]*pb.CommandParams{{}, {}, {}},
+						vector: []data.TimeVector{{0, 0, 0}, {0, 0, 0}, {0, 0, 0}},
 					}
-				}
-				log.Log(&f, "<MergeHistories> fulcrum id=0 added history for planet \"%s\", vector %d, %d, %d", planet, vector[0], vector[1], vector[2])
-			}
-		case 1:
-			for _, cmd := range neighborHistories.hist1 {
-				planet := cmd.GetPlanetName()
-				vector := cmd.GetLastTimeVector().GetTime()
-
-				if info, ok := allHistories[planet]; ok {
-					info.f1.hist = append(info.f1.hist, cmd)
-					info.f1.vector = vector
-
-					allHistories[planet] = info
-				} else {
-					allHistories[planet] = fHist{
-						f1: fInfo{
-							hist:   []*pb.CommandParams{cmd},
-							vector: vector,
-						},
-						f0: fInfo{hist: []*pb.CommandParams{}, vector: []uint32{0, 0, 0}},
-						f2: fInfo{hist: []*pb.CommandParams{}, vector: []uint32{0, 0, 0}},
-					}
+					info[planet] = fh
 				}
 
-				log.Log(&f, "<MergeHistories> fulcrum id=1 added history for planet \"%s\", vector %d, %d, %d", planet, vector[0], vector[1], vector[2])
+				v := vector.GetTime()
+				info[planet].vector[i] = data.TimeVector{v[0], v[1], v[2]}
+				info[planet].hist[i] = currHist
 
-			}
-		case 2:
-			for _, cmd := range neighborHistories.hist2 {
-				planet := cmd.GetPlanetName()
-				vector := cmd.GetLastTimeVector().GetTime()
-
-				if info, ok := allHistories[planet]; ok {
-					info.f2.hist = append(info.f2.hist, cmd)
-					info.f2.vector = vector
-
-					allHistories[planet] = info
-				} else {
-					allHistories[planet] = fHist{
-						f2: fInfo{
-							hist:   []*pb.CommandParams{cmd},
-							vector: vector,
-						},
-						f0: fInfo{hist: []*pb.CommandParams{}, vector: []uint32{0, 0, 0}},
-						f1: fInfo{hist: []*pb.CommandParams{}, vector: []uint32{0, 0, 0}},
-					}
-				}
-				log.Log(&f, "<MergeHistories> fulcrum id=2 added history for planet \"%s\", vector %d, %d, %d", planet, vector[0], vector[1], vector[2])
+				currHist = []*pb.CommandParams{}
 
 			}
 		}
 	}
 
-	log.Log(&f, "len(allHistories)=%d", len(allHistories))
-	for planet, histories := range allHistories {
-		vector0 := histories.f0.vector
-		vector1 := histories.f1.vector
-		vector2 := histories.f2.vector
+	log.Log(&f, "amount of planets from all fulcrums is %d", len(info))
+	for planet, history := range info {
+		for i := 0; i < 3; i++ {
+			hOwn := history.hist[i]
 
-		// Once all three histories are in memory for a given
-		// planet, we have to merge them into one and add them
-		// to newHistory
-		if vector0.GreaterThanOrEqual(vector1) && vector0.GreaterThanOrEqual(vector2) {
-			// Most updated is vector0
-			newHistory = append(newHistory, histories.f0.hist...)
-			log.Log(&f, "<MergeHistories> vector 0 is greater, so choosing that as history for planet \"%s\"", planet)
+			vOwn := history.vector[i]
+			vTheirs1 := history.vector[(i+1)%3]
+			vTheirs2 := history.vector[(i+2)%3]
 
-		} else if vector1.GreaterThanOrEqual(vector0) && vector1.GreaterThanOrEqual(vector2) {
-			// Most updated is vector1
-			newHistory = append(newHistory, histories.f1.hist...)
-			log.Log(&f, "<MergeHistories> vector 1 is greater, so choosing that as history for planet \"%s\"", planet)
+			if vOwn.GreaterThanOrEqual(vTheirs1) && vOwn.GreaterThanOrEqual(vTheirs2) {
+				log.Log(&f, "<MergeHistories> vector from fulcrum %d is greater, so we'll choose that as history for planet \"%s\"", i, planet)
 
-		} else {
-			// Most updated is vector2
-			newHistory = append(newHistory, histories.f2.hist...)
-			log.Log(&f, "<MergeHistories> vector 2 is greater, so choosing that as history for planet \"%s\"", planet)
-
+				newHistory = append(newHistory, hOwn...)
+				break
+			}
 		}
 	}
 	log.Log(&f, "len(newHistory)=%d", len(newHistory))
 
 	return newHistory
+}
+
+func GetHistory() []*pb.CommandParams {
+	history := make([]*pb.CommandParams, 0)
+	for planet := range planetVectors {
+		history = append(history, ReadPlanetLog(planet)...)
+		*(history[len(history)-1].LastTimeVector) = *planetVectors[planet].ToProto()
+	}
+	return history
 }
 
 // Asynchronous function called only by one of the available
@@ -328,15 +306,23 @@ func MergeHistories() []*pb.CommandParams {
 // as a response.
 func SyncWithEventualConsistency() {
 	for {
-		time.Sleep(time.Minute * 2)
+		time.Sleep(time.Second * 5)
 
 		// Send 'RunCommand' rpc call with 'CHECK_CONSISTENCY'
 		for i := 1; i < 3; i++ {
-			neighbor := data.Address.FULCRUM[(id+1)%3]
+			neighbor := data.Address.FULCRUM[i]
+			log.Log(&f, "About to call BoradcastChanges to fulcrum %d returns it's history", i)
 
-			clients[neighbor].RunCommand(&pb.CommandParams{
-				Command: pb.Command_CHECK_CONSISTENCY.Enum(),
-			})
+			neighborHistories[neighbor] = clients[neighbor].BroadcastChanges([]*pb.CommandParams{})
+		}
+
+		newHistory := MergeHistories()
+
+		for i := 1; i < 3; i++ {
+			neighbor := data.Address.FULCRUM[i]
+			log.Log(&f, "About to call BoradcastChanges to fulcrum %d with new history", i)
+
+			clients[neighbor].BroadcastChanges(newHistory)
 		}
 	}
 }
@@ -356,7 +342,7 @@ func Run(fulcrumId int) {
 	}
 
 	if id == 0 {
-		//go SyncWithEventualConsistency()
+		go SyncWithEventualConsistency()
 	}
 
 	forever := make(chan bool)

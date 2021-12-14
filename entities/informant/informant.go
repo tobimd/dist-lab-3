@@ -92,21 +92,24 @@ func ExecuteCommand(command *pb.Command, planet string, city string, value inter
 		// Stops if command was not recognized
 		log.Log(&f, "%s Received command unknown to informant", fn)
 	}
-	log.Log(&f, "%s Received time vector: %v", fn, fulcrumResponse.GetTimeVector())
+	responseVector := fulcrumResponse.TimeVector.GetTime()
+	log.Log(&f, "%s Received time vector: %v", fn, responseVector)
+
+	if responseVector[0] == 0 && responseVector[1] == 0 && responseVector[2] == 0 {
+		log.Print(&f, "Algo ha pasado y no se ha podido ejecutar su comando...")
+
+		// switch &command {
+		// case condition:
+
+		// }
+	}
 
 	info := new(data.CommandHistory)
 	info.Command = *command
 	info.City = city
 	info.FulcrumAddress = *fulcrumAddress
-	//DELETE when fuclrumResponse contains non null TimeVector
-	if fulcrumResponse.TimeVector != nil {
-		info.TimeVector = fulcrumResponse.TimeVector.GetTime()
+	info.TimeVector = fulcrumResponse.TimeVector.GetTime()
 
-	} else {
-		info.TimeVector = []uint32{1, 1, 1}
-		log.Log(&f, "%s Using default time vector", fn)
-
-	}
 	planetHistory[planet] = append(planetHistory[planet], *info)
 
 }

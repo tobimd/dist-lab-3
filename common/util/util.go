@@ -194,7 +194,7 @@ func ReadUserInput(f *string, msg string, a ...interface{}) (*pb.Command, string
 }
 
 func GetContext() (context.Context, context.CancelFunc) {
-	return context.WithTimeout(context.Background(), time.Second)
+	return context.WithTimeout(context.Background(), time.Minute*5)
 }
 
 // Same as 'strconv.Atoi(...)' but without having to handle the

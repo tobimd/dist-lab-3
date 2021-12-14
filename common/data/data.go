@@ -25,6 +25,10 @@ func (t TimeVector) GreaterThanOrEqual(other TimeVector) bool {
 	return t[0] >= other[0] && t[1] >= other[1] && t[2] >= other[2]
 }
 
+func (t TimeVector) ToProto() *pb.TimeVector {
+	return &pb.TimeVector{Time: []uint32{t[0], t[1], t[2]}}
+}
+
 type GrpcClient struct {
 	Client *pb.CommunicationClient
 }

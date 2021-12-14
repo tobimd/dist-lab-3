@@ -26,6 +26,12 @@ func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb
 		log.Log(&f, "Adding city: %v", command)
 
 		planet = command.GetPlanetName()
+		// city := command.GetCityName()
+
+		// if CityDoesExistOn(planet, city) {
+		// 	timeVector := pb.TimeVector{Time: []uint32{0, 0, 0}}
+		// 	return &pb.FulcrumResponse{TimeVector: &timeVector}, nil
+		// }
 
 		SavePlanetData(planet, command.GetCityName(), int(command.GetNewNumOfRebels()), "", StoreMethod.Create)
 		UpdatePlanetLog(command.Command, planet, command.GetCityName(), command.GetNewNumOfRebels())
@@ -35,10 +41,12 @@ func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb
 		log.Log(&f, "Updating city: %v", command)
 
 		planet = command.GetPlanetName()
+		// city := command.GetCityName()
 
-		if command.NumOfRebels == nil {
-			log.Print(&f, "nil nil")
-		}
+		// if !CityDoesExistOn(planet, city) {
+		// 	timeVector := pb.TimeVector{Time: []uint32{0, 0, 0}}
+		// 	return &pb.FulcrumResponse{TimeVector: &timeVector}, nil
+		// }
 
 		log.Log(&f, "new city name: %s", command.GetNewCityName())
 
@@ -50,6 +58,12 @@ func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb
 		log.Log(&f, "Updating rebels: %v", command)
 
 		planet = command.GetPlanetName()
+		// city := command.GetCityName()
+
+		// if !CityDoesExistOn(planet, city) {
+		// 	timeVector := pb.TimeVector{Time: []uint32{0, 0, 0}}
+		// 	return &pb.FulcrumResponse{TimeVector: &timeVector}, nil
+		// }
 
 		SavePlanetData(planet, command.GetCityName(), int(command.GetNewNumOfRebels()), "", StoreMethod.Update)
 		UpdatePlanetLog(command.Command, planet, command.GetCityName(), command.GetNewNumOfRebels())
@@ -59,30 +73,14 @@ func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb
 		log.Log(&f, "Deleting city: %v", command)
 
 		planet = command.GetPlanetName()
+		// city := command.GetCityName()
 
+		// if !CityDoesExistOn(planet, city) {
+		// 	timeVector :=  pb.TimeVector{Time: []uint32{0,0,0}}
+		// 	return &pb.FulcrumResponse{TimeVector: &timeVector}, nil
+		// }
 		SavePlanetData(planet, command.GetCityName(), int(command.GetNewNumOfRebels()), "", StoreMethod.Delete)
 		UpdatePlanetLog(command.Command, planet, command.GetCityName(), command.GetNewNumOfRebels())
-
-	case pb.Command_CHECK_CONSISTENCY:
-		// When recieving this command, gather all history from
-		// logs and call `BroadcastChanges` to sender with defer
-		info := make([]*pb.CommandParams, 0)
-
-		for planet, vector := range planetVectors {
-			// Append all updates done to a planet
-			info = append(info, ReadPlanetLog(planet)...)
-
-			// For the last Command, set LastTimeVector with these
-			info[len(info)-1].LastTimeVector = &pb.TimeVector{
-				Time: vector,
-			}
-		}
-
-		// Now that all history is saved within 'info', call
-		// 'BroadcastChanges' to fulcrum 0
-		defer clients[data.Address.FULCRUM[0]].BroadcastChanges(&pb.FulcrumHistory{
-			History: info,
-		})
 
 	case pb.Command_GET_PLANET_TIME:
 		planet = command.GetPlanetName()
@@ -118,30 +116,34 @@ func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb
 // The lower the id, the bigger priority it has over merge
 // conflicts, so that way we can avoid having to recieve both of
 // the neighbor's histories and just deal with them separately.
-func (s *Server) BroadcastChanges(ctx context.Context, history *pb.FulcrumHistory) (*pb.FulcrumHistory, error) {
+func (s *Server) BroadcastChanges(ctx context.Context, fulcrumHistory *pb.FulcrumHistory) (*pb.FulcrumHistory, error) {
 	log.Log(&f, "[server:BroadcastChanges] Called")
 
-	// TODO: Check if it makes sense to use this logic inside
-	// an anonymous function (and also that it's async)
-	go func() {
-		if len(neighborHistories.hist1) == 0 {
-			neighborHistories.hist1 = history.GetHistory()
+	// If length is 0, then it means fulcrum should respond with
+	// it's own history
+	if len(fulcrumHistory.GetHistory()) == 0 {
+		return &pb.FulcrumHistory{History: GetHistory()}, nil
 
-		} else {
-			neighborHistories.hist2 = history.GetHistory()
-			neighborChangesCh <- true
+		// Otherwise, update history
+	} else {
+		currPlanet := ""
+
+		for _, history := range fulcrumHistory.GetHistory() {
+			planet := history.GetPlanetName()
+			city := history.GetCityName()
+			numRebels := int(history.GetNumOfRebels())
+
+			method := StoreMethod.Create
+			if planet != currPlanet {
+				method = StoreMethod.Rewrite
+				currPlanet = planet
+			}
+
+			SavePlanetData(planet, city, numRebels, "", method)
 		}
-	}()
 
-	// Stop until second fulcrum sends history, making the
-	// channel 'neighborChangesCh' recieve a value
-	<-neighborChangesCh
-
-	newHistory := MergeHistories()
-	neighborHistories.hist1 = []*pb.CommandParams{}
-	neighborHistories.hist2 = []*pb.CommandParams{}
-
-	return &pb.FulcrumHistory{History: newHistory}, nil
+		return &pb.FulcrumHistory{History: []*pb.CommandParams{}}, nil
+	}
 }
 
 // **** CLIENT FUNCTIONS ****
@@ -160,34 +162,15 @@ func (c *Client) RunCommand(command *pb.CommandParams) *pb.FulcrumResponse {
 	return res
 }
 
-func (c *Client) BroadcastChanges(history *pb.FulcrumHistory) {
+func (c *Client) BroadcastChanges(history []*pb.CommandParams) []*pb.CommandParams {
 	client := *((*c).Client)
 	log.Log(&f, "[client:BroadcastChanges] Called")
 
 	ctx, cancel := util.GetContext()
 	defer cancel()
 
-	res, err := client.BroadcastChanges(ctx, history)
+	res, err := client.BroadcastChanges(ctx, &pb.FulcrumHistory{History: history})
 	log.FailOnError(&f, err, "Couldn't call \"BroadcastChanges\" as entity Fulcrum (id=%d)", id)
 
-	// The returned value should be considered as the new
-	// history for each planet. Because fulcrum with id=0 did
-	// the merging strategy on all three histories and returned
-	// the new values
-
-	currPlanet := ""
-
-	for _, history := range res.GetHistory() {
-		planet := history.GetPlanetName()
-		city := history.GetCityName()
-		numRebels := int(history.GetNumOfRebels())
-
-		method := StoreMethod.Create
-		if planet != currPlanet {
-			method = StoreMethod.Rewrite
-			currPlanet = planet
-		}
-
-		SavePlanetData(planet, city, numRebels, "", method)
-	}
+	return res.GetHistory()
 }
