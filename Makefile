@@ -29,8 +29,8 @@ $(entity):
 	@$(script) $@ $(call get-id)
 
 stop:
-	@-pkill -ex go ||:
-	@-pkill -ex main ||:
+	@-pkill -x go ||:
+	@-pkill -x main ||:
 
 help:
 	@echo "Running entities:"
@@ -41,9 +41,11 @@ help:
 	@echo "Other:"
 	@echo "    make clean          # remove .log and .txt files"
 	@echo "    make stop           # kill all \"go\" and \"main\" processes"
+	@echo "    make reset          # both stop and clean"
 	@echo ""
 	@echo "[ * default ]"
 
+reset: stop clean
 
 clean:
 	@rm -fv .logs/*.log
