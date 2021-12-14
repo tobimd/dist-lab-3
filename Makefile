@@ -10,19 +10,19 @@ noinput:
 	@$(script) fulcrum 2
 	@$(script) broker
 
-dist-0:
+dist-181:
 	@$(script) fulcrum 0
 	@$(script) informant 0
 
-dist-1:
+dist-182:
 	@$(script) fulcrum 1
 	@$(script) informant 1
 
-dist-2:
+dist-183:
 	@$(script) fulcrum 2
 	@$(script) leia
 
-dist-3:
+dist-184:
 	@$(script) broker
 
 $(entity):
@@ -35,7 +35,7 @@ stop:
 help:
 	@echo "Running entities:"
 	@echo "    make <entity> [id]" # run entity with id 0 by default
-	@echo "    make dist-[0..3]    # run specific entities"
+	@echo "    make dits-[#vm]     # run specific entities for a given VM"
 	@echo " *  make noinput        # run all entities that don't read from stdin"
 	@echo ""
 	@echo "Other:"
