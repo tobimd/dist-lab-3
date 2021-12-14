@@ -174,9 +174,14 @@ func ReadUserInput(f *string, msg string, a ...interface{}) (*pb.Command, string
 	city := strs[2]
 
 	if *cmd == pb.Command_UPDATE_NAME || *cmd == pb.Command_UPDATE_NUMBER || *cmd == pb.Command_ADD_CITY {
+		rebels := "0"
+
+		if len(strs) > 3 {
+			rebels = strs[3]
+		}
 		// If command is UpdateName, UpdateNumber or AddCity, then
 		// return the string of the 4th argument
-		return cmd, planet, city, strs[3]
+		return cmd, planet, city, rebels
 
 	} else {
 		// Otherwise, the command does not use the 4th argument
