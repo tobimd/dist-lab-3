@@ -18,7 +18,7 @@ func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb
 	log.Log(&f, "[server:RunCommand] Called with argument: command=\"%v\"", command.String())
 
 	var planet string
-
+	var response pb.FulcrumResponse
 	switch *command.Command {
 
 	case pb.Command_ADD_CITY:
@@ -89,6 +89,15 @@ func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb
 
 		log.Log(&f, "Returning planet %v TimeVector: %v", planet, planetVectors[planet])
 
+	case pb.Command_GET_NUMBER_REBELS:
+
+		planet = command.GetPlanetName()
+
+		rebelNumber := ReadCityData(planet, command.GetCityName())
+
+		timeVector := pb.TimeVector{Time: planetVectors[planet]}
+		return &pb.FulcrumResponse{TimeVector: &timeVector, NumOfRebels: &rebelNumber}, nil
+
 	default:
 		log.Log(&f, "Unknown command: %v", command)
 
@@ -96,7 +105,7 @@ func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb
 	}
 
 	timevector := pb.TimeVector{Time: planetVectors[planet]}
-	response := pb.FulcrumResponse{TimeVector: &timevector}
+	response = pb.FulcrumResponse{TimeVector: &timevector}
 
 	log.Print(&f, "PlanetVectors before sending: %+v", planetVectors)
 	log.Print(&f, "Response before sending: %+v", response)

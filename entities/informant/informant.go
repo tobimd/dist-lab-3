@@ -28,12 +28,14 @@ func ExecuteCommand(command *pb.Command, planet string, city string, value inter
 
 	} else {
 		log.Log(&f, "%s Latest time vector for planet %s: %v", fn, planet, planetHistory[planet][len(planetHistory[planet])-1])
+		timeVector = planetHistory[planet][len(planetHistory[planet])-1].TimeVector
 
 	}
 
 	str := fmt.Sprintf("%v", value)
 	broker := clients[data.Address.BROKER]
 	fulcrumAddress := broker.RunCommand(&pb.CommandParams{
+		Command:        command,
 		LastTimeVector: &pb.TimeVector{Time: timeVector},
 		PlanetName:     &planet,
 	}).FulcrumRedirectAddr
@@ -90,7 +92,7 @@ func ExecuteCommand(command *pb.Command, planet string, city string, value inter
 		// Stops if command was not recognized
 		log.Log(&f, "%s Received command unknown to informant", fn)
 	}
-	log.Log(&f, "%s Received time vector: %v", fn, fulcrumResponse.TimeVector)
+	log.Log(&f, "%s Received time vector: %v", fn, fulcrumResponse.GetTimeVector())
 
 	info := new(data.CommandHistory)
 	info.Command = *command
@@ -98,8 +100,7 @@ func ExecuteCommand(command *pb.Command, planet string, city string, value inter
 	info.FulcrumAddress = *fulcrumAddress
 	//DELETE when fuclrumResponse contains non null TimeVector
 	if fulcrumResponse.TimeVector != nil {
-		log.Log(&f, "%s response TimeVector: %s", fn, fulcrumResponse.GetTimeVector())
-		info.TimeVector = fulcrumResponse.TimeVector.Time
+		info.TimeVector = fulcrumResponse.TimeVector.GetTime()
 
 	} else {
 		info.TimeVector = []uint32{1, 1, 1}
@@ -118,7 +119,9 @@ func ConsoleInteraction() {
 		log.Log(&f, "<ConsoleInteraction> Requesting user input")
 		command, planet, city, value := util.ReadUserInput(&f, "Ingresa el comando y argumentos que quieres usar:")
 		log.Log(&f, "<ConsoleInteraction> Parsed command: %s %s %s %s", command, planet, city, value)
-		ExecuteCommand(command, planet, city, value)
+		if command != nil {
+			ExecuteCommand(command, planet, city, value)
+		}
 	}
 }
 

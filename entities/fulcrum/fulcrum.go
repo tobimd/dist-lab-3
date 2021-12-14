@@ -6,6 +6,7 @@ import (
 	"dist/common/util"
 	"dist/pb"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -139,6 +140,25 @@ func UpdatePlanetLog(command *pb.Command, planet string, city string, value inte
 
 	err := util.WriteLines(filename, false, info)
 	log.FailOnError(&f, err, "Couldn't write to file \"%s\"", filename)
+}
+
+// Opens planetary registry for a specific planet
+// and retrieves rebel data for a city.
+func ReadCityData(planet string, city string) uint32 {
+	filename := fmt.Sprintf("%s.txt", planet)
+	var rebelNumber uint32
+
+	util.ReadLines(filename, func(line string) bool {
+		values := strings.Split(line, " ")
+		if values[1] == city {
+			number, _ := strconv.Atoi(values[2])
+			rebelNumber = uint32(number)
+			return true
+		}
+		return false
+	})
+
+	return rebelNumber
 }
 
 func ReadPlanetLog(planet string) []*pb.CommandParams {
