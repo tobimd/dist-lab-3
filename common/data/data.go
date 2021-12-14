@@ -12,10 +12,10 @@ var (
 		FULCRUM, INFORMANT []string
 		BROKER, LEIA       string
 	}{
-		FULCRUM:   []string{"0.0.0.0:10000", "0.0.0.0:10001", "0.0.0.0:10002"},
-		INFORMANT: []string{"0.0.0.0:10010", "0.0.0.0:10011"},
-		BROKER:    "0.0.0.0:10020",
-		LEIA:      "0.0.0.0:10030",
+		FULCRUM:   []string{"dist181:10000", "dist182:10001", "dist183:10002"},
+		INFORMANT: []string{"dist181:10010", "dist182:10011"},
+		BROKER:    "dist184:10020",
+		LEIA:      "dist183:10030",
 	}
 )
 
