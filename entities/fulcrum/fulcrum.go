@@ -294,7 +294,7 @@ func GetHistory() []*pb.CommandParams {
 	history := make([]*pb.CommandParams, 0)
 	for planet := range planetVectors {
 		history = append(history, ReadPlanetLog(planet)...)
-		*(history[len(history)-1].LastTimeVector) = *planetVectors[planet].ToProto()
+		history[len(history)-1].LastTimeVector = planetVectors[planet].ToProto()
 	}
 	return history
 }
@@ -306,7 +306,7 @@ func GetHistory() []*pb.CommandParams {
 // as a response.
 func SyncWithEventualConsistency() {
 	for {
-		time.Sleep(time.Second * 5)
+		time.Sleep(time.Minute * 1)
 
 		// Send 'RunCommand' rpc call with 'CHECK_CONSISTENCY'
 		for i := 1; i < 3; i++ {

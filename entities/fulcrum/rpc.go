@@ -127,6 +127,7 @@ func (s *Server) BroadcastChanges(ctx context.Context, fulcrumHistory *pb.Fulcru
 		// Otherwise, update history
 	} else {
 		currPlanet := ""
+		planetVectors = map[string]data.TimeVector{}
 
 		for _, history := range fulcrumHistory.GetHistory() {
 			planet := history.GetPlanetName()
