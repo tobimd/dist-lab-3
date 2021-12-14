@@ -81,6 +81,9 @@ func SavePlanetData(planet string, city string, numRebels int, newCityName strin
 		err = util.ReplaceLines(filename, func(line string) string {
 			values := strings.Split(line, " ")
 			log.Log(&f, "values: %v", values)
+			if len(values) == 0 {
+				return line
+			}
 			if values[1] == city {
 				replacedLine = line
 				if newCityName != "" {
@@ -99,6 +102,9 @@ func SavePlanetData(planet string, city string, numRebels int, newCityName strin
 		deletedLine := ""
 		err = util.DeleteLines(filename, func(line string) bool {
 			values := strings.Split(line, " ")
+			if len(values) == 0 {
+				return true
+			}
 			if values[1] == city {
 				deletedLine = line
 				return false
