@@ -33,7 +33,7 @@ func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb
 		// 	return &pb.FulcrumResponse{TimeVector: &timeVector}, nil
 		// }
 
-		SavePlanetData(planet, command.GetCityName(), int(command.GetNewNumOfRebels()), "", StoreMethod.Create)
+		SavePlanetData(planet, command.GetCityName(), int(command.GetNewNumOfRebels()), "", StoreMethod.Append)
 		UpdatePlanetLog(command.Command, planet, command.GetCityName(), command.GetNewNumOfRebels())
 
 	case pb.Command_UPDATE_NAME:
@@ -126,22 +126,7 @@ func (s *Server) BroadcastChanges(ctx context.Context, fulcrumHistory *pb.Fulcru
 
 		// Otherwise, update history
 	} else {
-		currPlanet := ""
-		planetVectors = map[string]data.TimeVector{}
-
-		for _, history := range fulcrumHistory.GetHistory() {
-			planet := history.GetPlanetName()
-			city := history.GetCityName()
-			numRebels := int(history.GetNumOfRebels())
-
-			method := StoreMethod.Create
-			if planet != currPlanet {
-				method = StoreMethod.Rewrite
-				currPlanet = planet
-			}
-
-			SavePlanetData(planet, city, numRebels, "", method)
-		}
+		SetHistory(fulcrumHistory.GetHistory())
 
 		return &pb.FulcrumHistory{History: []*pb.CommandParams{}}, nil
 	}
