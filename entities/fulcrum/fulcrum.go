@@ -188,7 +188,7 @@ func CityDoesExistOn(planet string, city string) (exist bool) {
 
 func ReadPlanetLog(planet string) []*pb.CommandParams {
 	filename := fmt.Sprintf("log.%s.txt", planet)
-	info := make([]*pb.CommandParams, 1)
+	info := make([]*pb.CommandParams, 0)
 
 	util.ReadLines(filename,
 		func(line string) bool {
@@ -220,6 +220,7 @@ func ReadPlanetLog(planet string) []*pb.CommandParams {
 		},
 	)
 
+	log.Log(&f, "Info recieved: %+v", info)
 	return info
 }
 
@@ -294,7 +295,28 @@ func GetHistory() []*pb.CommandParams {
 	history := make([]*pb.CommandParams, 0)
 	for planet := range planetVectors {
 		history = append(history, ReadPlanetLog(planet)...)
-		history[len(history)-1].LastTimeVector = planetVectors[planet].ToProto()
+
+		last := history[len(history)-1]
+		log.Log(&f, "history variable: %+v", last)
+
+		planet := last.GetPlanetName()
+		city := last.GetCityName()
+		num := last.GetNumOfRebels()
+		newcity := last.GetNewCityName()
+		newnum := last.GetNewNumOfRebels()
+		command := last.GetCommand()
+
+		log.Print(&f, "planet: %v, city: %v, rebel num: %v, new city: %v, new num: %v, command :%v", planet, city, num, newcity, newnum, command)
+
+		history[len(history)-1] = &pb.CommandParams{
+			PlanetName:     &planet,
+			CityName:       &city,
+			NumOfRebels:    &num,
+			NewCityName:    &newcity,
+			NewNumOfRebels: &newnum,
+			Command:        &command,
+			LastTimeVector: planetVectors[planet].ToProto(),
+		}
 	}
 	return history
 }
@@ -306,7 +328,7 @@ func GetHistory() []*pb.CommandParams {
 // as a response.
 func SyncWithEventualConsistency() {
 	for {
-		time.Sleep(time.Minute * 1)
+		time.Sleep(time.Second * 30)
 
 		// Send 'RunCommand' rpc call with 'CHECK_CONSISTENCY'
 		for i := 1; i < 3; i++ {
