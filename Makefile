@@ -34,7 +34,7 @@ stop:
 
 help:
 	@echo "Running entities:"
-	@echo "    make <entity> [id]"
+	@echo "    make <entity> [id]" # run entity with id 0 by default
 	@echo "    make dist-[0..3]    # run specific entities"
 	@echo " *  make noinput        # run all entities that don't read from stdin"
 	@echo ""
