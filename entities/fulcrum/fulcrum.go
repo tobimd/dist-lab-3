@@ -380,8 +380,6 @@ func GetHistory() []*pb.CommandParams {
 		newnum := last.GetNewNumOfRebels()
 		command := last.GetCommand()
 
-		log.Print(&f, "planet: %v, city: %v, rebel num: %v, new city: %v, new num: %v, command :%v", planet, city, num, newcity, newnum, command)
-
 		history[len(history)-1] = &pb.CommandParams{
 			PlanetName:     &planet,
 			CityName:       &city,
