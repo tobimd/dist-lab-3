@@ -33,3 +33,7 @@ Las entidades que pueden recibir inputs son sólo Leia y los dos Informantes, po
 La forma de los comandos es:
 
 `<comando> <nombre_planeta> <nombre_ciudad> [argumento]`
+
+## Estrategia de conflictos
+
+Para solucionar posibles conflictos al momento practicar la eventual consistencia, Se comparara cantidad de cambios y se replicara en los servidores fulcrum los cambios realizados en el servidor que tenga una mayor de comandos realizados. Descartando los cambios de los otros servidores

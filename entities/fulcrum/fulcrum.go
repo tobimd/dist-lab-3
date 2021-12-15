@@ -252,7 +252,7 @@ func MergeHistories() []*pb.CommandParams {
 		hist   [][]*pb.CommandParams
 	}
 
-	info := make(map[string]FH, len(planetVectors))
+	info := make(map[string]FH, 0)
 
 	for i := 0; i < 3; i++ {
 		hist := allHistories[i]
@@ -279,7 +279,6 @@ func MergeHistories() []*pb.CommandParams {
 				info[planet].hist[i] = currHist
 
 				currHist = []*pb.CommandParams{}
-
 			}
 		}
 	}
@@ -293,12 +292,26 @@ func MergeHistories() []*pb.CommandParams {
 			vTheirs1 := history.vector[(i+1)%3]
 			vTheirs2 := history.vector[(i+2)%3]
 
+			// decides which history to take as the doodoo one
 			if vOwn.GreaterThanOrEqual(vTheirs1) && vOwn.GreaterThanOrEqual(vTheirs2) {
 				log.Log(&f, "<MergeHistories> vector from fulcrum %d is greater, so we'll choose that as history for planet \"%s\"", i, planet)
 
 				newHistory = append(newHistory, hOwn...)
 				break
 			}
+		}
+
+		// merge all vectors into one
+		finalVector := &pb.TimeVector{
+			Time: []uint32{
+				history.vector[0][0],
+				history.vector[1][1],
+				history.vector[2][2],
+			},
+		}
+
+		if len(newHistory) != 0 {
+			newHistory[len(newHistory)-1].LastTimeVector = finalVector
 		}
 	}
 	log.Log(&f, "len(newHistory)=%d", len(newHistory))
@@ -331,12 +344,18 @@ func SetHistory(newHistory []*pb.CommandParams) {
 
 		SavePlanetData(planet, city, numRebels, "", method)
 
+		// overwrite last vector for a given planet to the final vector agreement
+		if history.LastTimeVector != nil {
+			planetVectors[planet] = history.LastTimeVector.GetTime()
+		}
+
 		currPlanet = planet
 	}
 
 	// Delete all log.<planet>.txt files
 	for _, planet := range planetLogList {
-		util.DeleteFile("log." + planet + ".txt")
+		ok := util.DeleteFile("log." + planet + ".txt")
+		log.Print(&f, "Deleted file = %v", ok)
 	}
 	util.DeleteFile(".txt")
 
@@ -384,7 +403,7 @@ func GetHistory() []*pb.CommandParams {
 // as a response.
 func SyncWithEventualConsistency() {
 	for {
-		time.Sleep(time.Second * 30)
+		time.Sleep(time.Minute * 2)
 
 		// Send 'RunCommand' rpc call with 'CHECK_CONSISTENCY'
 		for i := 1; i < 3; i++ {
