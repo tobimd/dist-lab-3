@@ -23,7 +23,7 @@ func Run() {
 	// main client loop
 	for {
 
-		cmd, planet, city, _ := util.ReadUserInput(&f, "Leia> ")
+		cmd, planet, city, _ := util.ReadUserInput(&f, "Leia $ ")
 
 		command := pb.CommandParams{
 			Command:    cmd,
@@ -32,8 +32,6 @@ func Run() {
 		}
 
 		serverResponse := leia_client.RunCommand(&command)
-
-		log.Log(&f, "Broker Response: %+v", *serverResponse)
 
 		numRebels := serverResponse.GetNumOfRebels()
 		timeVector := serverResponse.TimeVector.GetTime()
@@ -49,7 +47,7 @@ func Run() {
 		// save event in command history
 		cmdHistory = append(cmdHistory, event)
 
-		log.Print(&f, "Number of Rebels: %d\n", numRebels)
+		log.Print(&f, "Número de rebeldes: %d\n", numRebels)
 		log.Log(&f, "History to date: %+v", cmdHistory)
 	}
 }

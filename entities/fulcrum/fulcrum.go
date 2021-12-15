@@ -354,8 +354,7 @@ func SetHistory(newHistory []*pb.CommandParams) {
 
 	// Delete all log.<planet>.txt files
 	for _, planet := range planetLogList {
-		ok := util.DeleteFile("log." + planet + ".txt")
-		log.Print(&f, "Deleted file = %v", ok)
+		util.DeleteFile("log." + planet + ".txt")
 	}
 	util.DeleteFile(".txt")
 

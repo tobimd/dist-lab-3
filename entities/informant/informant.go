@@ -122,7 +122,7 @@ func ConsoleInteraction() {
 
 	for {
 		log.Log(&f, "<ConsoleInteraction> Requesting user input")
-		command, planet, city, value := util.ReadUserInput(&f, "Ingresa el comando y argumentos que quieres usar:")
+		command, planet, city, value := util.ReadUserInput(&f, "Informante %d $ ", id)
 		log.Log(&f, "<ConsoleInteraction> Parsed command: %s %s %s %s", command, planet, city, value)
 		if command != nil {
 			ExecuteCommand(command, planet, city, value)
