@@ -26,12 +26,12 @@ func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb
 		log.Log(&f, "Adding city: %v", command)
 
 		planet = command.GetPlanetName()
-		// city := command.GetCityName()
+		city := command.GetCityName()
 
-		// if CityDoesExistOn(planet, city) {
-		// 	timeVector := pb.TimeVector{Time: []uint32{0, 0, 0}}
-		// 	return &pb.FulcrumResponse{TimeVector: &timeVector}, nil
-		// }
+		if CityDoesExistOn(planet, city) {
+			timeVector := pb.TimeVector{Time: []uint32{0, 0, 0}}
+			return &pb.FulcrumResponse{TimeVector: &timeVector}, nil
+		}
 
 		SavePlanetData(planet, command.GetCityName(), int(command.GetNewNumOfRebels()), "", StoreMethod.Append)
 		UpdatePlanetLog(command.Command, planet, command.GetCityName(), command.GetNewNumOfRebels())
@@ -41,12 +41,12 @@ func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb
 		log.Log(&f, "Updating city: %v", command)
 
 		planet = command.GetPlanetName()
-		// city := command.GetCityName()
+		city := command.GetCityName()
 
-		// if !CityDoesExistOn(planet, city) {
-		// 	timeVector := pb.TimeVector{Time: []uint32{0, 0, 0}}
-		// 	return &pb.FulcrumResponse{TimeVector: &timeVector}, nil
-		// }
+		if !CityDoesExistOn(planet, city) {
+			timeVector := pb.TimeVector{Time: []uint32{0, 0, 0}}
+			return &pb.FulcrumResponse{TimeVector: &timeVector}, nil
+		}
 
 		log.Log(&f, "new city name: %s", command.GetNewCityName())
 
@@ -58,12 +58,12 @@ func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb
 		log.Log(&f, "Updating rebels: %v", command)
 
 		planet = command.GetPlanetName()
-		// city := command.GetCityName()
+		city := command.GetCityName()
 
-		// if !CityDoesExistOn(planet, city) {
-		// 	timeVector := pb.TimeVector{Time: []uint32{0, 0, 0}}
-		// 	return &pb.FulcrumResponse{TimeVector: &timeVector}, nil
-		// }
+		if !CityDoesExistOn(planet, city) {
+			timeVector := pb.TimeVector{Time: []uint32{0, 0, 0}}
+			return &pb.FulcrumResponse{TimeVector: &timeVector}, nil
+		}
 
 		SavePlanetData(planet, command.GetCityName(), int(command.GetNewNumOfRebels()), "", StoreMethod.Update)
 		UpdatePlanetLog(command.Command, planet, command.GetCityName(), command.GetNewNumOfRebels())
@@ -73,12 +73,12 @@ func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb
 		log.Log(&f, "Deleting city: %v", command)
 
 		planet = command.GetPlanetName()
-		// city := command.GetCityName()
+		city := command.GetCityName()
 
-		// if !CityDoesExistOn(planet, city) {
-		// 	timeVector :=  pb.TimeVector{Time: []uint32{0,0,0}}
-		// 	return &pb.FulcrumResponse{TimeVector: &timeVector}, nil
-		// }
+		if !CityDoesExistOn(planet, city) {
+			timeVector := pb.TimeVector{Time: []uint32{0, 0, 0}}
+			return &pb.FulcrumResponse{TimeVector: &timeVector}, nil
+		}
 		SavePlanetData(planet, command.GetCityName(), int(command.GetNewNumOfRebels()), "", StoreMethod.Delete)
 		UpdatePlanetLog(command.Command, planet, command.GetCityName(), command.GetNewNumOfRebels())
 
