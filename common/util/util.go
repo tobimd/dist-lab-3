@@ -95,7 +95,7 @@ func WriteLines(filename string, overwrite bool, lines ...string) error {
 // Returns true if file was created before attempting to read,
 // false otherwise.
 func ReplaceLines(filename string, replaceCallback func(string) string) error {
-	result := make([]string, 1)
+	result := make([]string, 0)
 
 	ReadLines(filename, func(line string) bool {
 		repl := replaceCallback(line)
@@ -130,7 +130,7 @@ func DeleteLines(filename string, deleteCallback func(string) bool) error {
 		return err
 	}
 
-	result := make([]string, 1)
+	result := make([]string, 0)
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		var include bool

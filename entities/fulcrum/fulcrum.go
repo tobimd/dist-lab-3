@@ -21,6 +21,10 @@ var (
 	// corresponding time vector for each one
 	planetVectors = make(map[string]data.TimeVector)
 
+	// A list of all filenames for log.<planet>.txt used when
+	// merging so that deleting them is easier
+	planetLogList = make([]string, 0)
+
 	// All grpc clients stored with each entity's address used
 	// as keys for the map object. `data.Client` is a pointer
 	// to pb.CommuncationClient which should be what gets
@@ -30,7 +34,7 @@ var (
 	// When using 'SavePlanetData', determine wether to append
 	// to the planet's history file, or rewrite it completely
 	// which is used when merging.
-	StoreMethod = struct{ Create, Update, Delete, Rewrite Method }{Create: 0, Update: 1, Delete: 2, Rewrite: 3}
+	StoreMethod = struct{ Append, Update, Delete, Rewrite Method }{Append: 0, Update: 1, Delete: 2, Rewrite: 3}
 
 	// When leader fulcrum (id=0) tells neighbors to send their
 	// history to it, the server function BroadcastChanges will
@@ -63,19 +67,18 @@ func SavePlanetData(planet string, city string, numRebels int, newCityName strin
 		info = fmt.Sprintf("%s %s", planet, newCityName)
 	}
 
-	if storeMethod == StoreMethod.Rewrite {
-		log.Log(&f, "<SavePlanetData> Because storeMethod is Rewrite, delete file and set storeMethod to Create")
-		util.DeleteFile(filename)
-		storeMethod = StoreMethod.Create
-	}
-
 	var err error
 
 	switch storeMethod {
-	case StoreMethod.Create:
+	case StoreMethod.Append, StoreMethod.Rewrite:
+		overwrite := false
+		if storeMethod == StoreMethod.Rewrite {
+			overwrite = true
+		}
+
 		// Write data into file
-		err = util.WriteLines(filename, false, info)
-		log.Log(&f, "<SavePlanetData> storeMethod is Create, written to file")
+		err = util.WriteLines(filename, overwrite, info)
+		log.Log(&f, "<SavePlanetData> storeMethod is Create (%v) or Rewrite (%v), written to file", overwrite, !overwrite)
 
 	case StoreMethod.Update:
 		replacedLine := ""
@@ -147,6 +150,18 @@ func UpdatePlanetLog(command *pb.Command, planet string, city string, value inte
 
 	err := util.WriteLines(filename, false, info)
 	log.FailOnError(&f, err, "Couldn't write to file \"%s\"", filename)
+
+	// Add filename to planetLogList if it wasn't added before
+	exists := false
+	for _, planetLogName := range planetLogList {
+		if planetLogName == planet {
+			exists = true
+		}
+	}
+
+	if !exists {
+		planetLogList = append(planetLogList, planet)
+	}
 }
 
 // Opens planetary registry for a specific planet
@@ -188,7 +203,7 @@ func CityDoesExistOn(planet string, city string) (exist bool) {
 
 func ReadPlanetLog(planet string) []*pb.CommandParams {
 	filename := fmt.Sprintf("log.%s.txt", planet)
-	info := make([]*pb.CommandParams, 1)
+	info := make([]*pb.CommandParams, 0)
 
 	util.ReadLines(filename,
 		func(line string) bool {
@@ -220,6 +235,7 @@ func ReadPlanetLog(planet string) []*pb.CommandParams {
 		},
 	)
 
+	log.Log(&f, "Info recieved: %+v", info)
 	return info
 }
 
@@ -236,12 +252,12 @@ func MergeHistories() []*pb.CommandParams {
 		hist   [][]*pb.CommandParams
 	}
 
-	info := make(map[string]FH, len(planetVectors))
+	info := make(map[string]FH, 0)
 
 	for i := 0; i < 3; i++ {
 		hist := allHistories[i]
 
-		currHist := make([]*pb.CommandParams, 1)
+		currHist := make([]*pb.CommandParams, 0)
 
 		for _, cmdParams := range hist {
 			planet := cmdParams.GetPlanetName()
@@ -263,7 +279,6 @@ func MergeHistories() []*pb.CommandParams {
 				info[planet].hist[i] = currHist
 
 				currHist = []*pb.CommandParams{}
-
 			}
 		}
 	}
@@ -277,6 +292,7 @@ func MergeHistories() []*pb.CommandParams {
 			vTheirs1 := history.vector[(i+1)%3]
 			vTheirs2 := history.vector[(i+2)%3]
 
+			// decides which history to take as the doodoo one
 			if vOwn.GreaterThanOrEqual(vTheirs1) && vOwn.GreaterThanOrEqual(vTheirs2) {
 				log.Log(&f, "<MergeHistories> vector from fulcrum %d is greater, so we'll choose that as history for planet \"%s\"", i, planet)
 
@@ -284,17 +300,97 @@ func MergeHistories() []*pb.CommandParams {
 				break
 			}
 		}
+
+		// merge all vectors into one
+		finalVector := &pb.TimeVector{
+			Time: []uint32{
+				history.vector[0][0],
+				history.vector[1][1],
+				history.vector[2][2],
+			},
+		}
+
+		if len(newHistory) != 0 {
+			newHistory[len(newHistory)-1].LastTimeVector = finalVector
+		}
 	}
 	log.Log(&f, "len(newHistory)=%d", len(newHistory))
 
 	return newHistory
 }
 
+func SetHistory(newHistory []*pb.CommandParams) {
+	currPlanet := ""
+	planetVectors = map[string]data.TimeVector{}
+
+	for _, history := range newHistory {
+		planet := history.GetPlanetName()
+		city := history.GetCityName()
+		numRebels := int(history.GetNumOfRebels())
+
+		if history.NumOfRebels != nil {
+			numRebels = int(history.GetNewNumOfRebels())
+		}
+
+		if history.NewCityName != nil {
+			city = history.GetCityName()
+		}
+
+		method := StoreMethod.Append
+		if planet != currPlanet {
+			method = StoreMethod.Rewrite
+			currPlanet = planet
+		}
+
+		SavePlanetData(planet, city, numRebels, "", method)
+
+		// overwrite last vector for a given planet to the final vector agreement
+		if history.LastTimeVector != nil {
+			planetVectors[planet] = history.LastTimeVector.GetTime()
+		}
+
+		currPlanet = planet
+	}
+
+	// Delete all log.<planet>.txt files
+	for _, planet := range planetLogList {
+		util.DeleteFile("log." + planet + ".txt")
+	}
+	util.DeleteFile(".txt")
+
+	planetLogList = []string{}
+}
+
 func GetHistory() []*pb.CommandParams {
 	history := make([]*pb.CommandParams, 0)
 	for planet := range planetVectors {
 		history = append(history, ReadPlanetLog(planet)...)
-		history[len(history)-1].LastTimeVector = planetVectors[planet].ToProto()
+
+		if len(history) == 0 {
+			continue
+		}
+
+		last := history[len(history)-1]
+		log.Log(&f, "history variable: %+v", last)
+
+		planet := last.GetPlanetName()
+		city := last.GetCityName()
+		num := last.GetNumOfRebels()
+		newcity := last.GetNewCityName()
+		newnum := last.GetNewNumOfRebels()
+		command := last.GetCommand()
+
+		log.Print(&f, "planet: %v, city: %v, rebel num: %v, new city: %v, new num: %v, command :%v", planet, city, num, newcity, newnum, command)
+
+		history[len(history)-1] = &pb.CommandParams{
+			PlanetName:     &planet,
+			CityName:       &city,
+			NumOfRebels:    &num,
+			NewCityName:    &newcity,
+			NewNumOfRebels: &newnum,
+			Command:        &command,
+			LastTimeVector: planetVectors[planet].ToProto(),
+		}
 	}
 	return history
 }
@@ -306,7 +402,7 @@ func GetHistory() []*pb.CommandParams {
 // as a response.
 func SyncWithEventualConsistency() {
 	for {
-		time.Sleep(time.Minute * 1)
+		time.Sleep(time.Minute * 2)
 
 		// Send 'RunCommand' rpc call with 'CHECK_CONSISTENCY'
 		for i := 1; i < 3; i++ {
@@ -318,6 +414,7 @@ func SyncWithEventualConsistency() {
 
 		newHistory := MergeHistories()
 
+		SetHistory(newHistory)
 		for i := 1; i < 3; i++ {
 			neighbor := data.Address.FULCRUM[i]
 			log.Log(&f, "About to call BoradcastChanges to fulcrum %d with new history", i)

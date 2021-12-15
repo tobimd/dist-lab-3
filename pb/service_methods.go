@@ -1,5 +1,7 @@
 package pb
 
+import "strings"
+
 func (cmd *Command) ToString() string {
 	switch *cmd {
 	case Command_ADD_CITY:
@@ -23,21 +25,26 @@ func (cmd *Command) ToString() string {
 }
 
 func CommandFromString(command string) *Command {
+
+	command = strings.ToLower(command)
+
 	switch command {
-	case "AddCity":
+	case "addcity":
 		return Command_ADD_CITY.Enum()
 
-	case "UpdateName":
+	case "updatename":
 		return Command_UPDATE_NAME.Enum()
 
-	case "UpdateNumber":
+	case "updatenumber":
 		return Command_UPDATE_NUMBER.Enum()
 
-	case "DeleteCity":
+	case "deletecity":
 		return Command_DELETE_CITY.Enum()
 
-	default:
+	case "getnumberrebels":
 		return Command_GET_NUMBER_REBELS.Enum()
+	default:
+		return nil
 
 	}
 }

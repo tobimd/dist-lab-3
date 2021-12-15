@@ -98,20 +98,22 @@ func ExecuteCommand(command *pb.Command, planet string, city string, value inter
 	if responseVector[0] == 0 && responseVector[1] == 0 && responseVector[2] == 0 {
 		log.Print(&f, "Algo ha pasado y no se ha podido ejecutar su comando...")
 
-		// switch &command {
-		// case condition:
+		switch *command {
+		case pb.Command_ADD_CITY:
+			log.Print(&f, "La ciudad %s ya existe en el planeta %s", city, planet)
+		default:
+			log.Print(&f, "La ciudad %s no existe en el planeta %s", city, planet)
+		}
+	} else {
 
-		// }
+		info := new(data.CommandHistory)
+		info.Command = *command
+		info.City = city
+		info.FulcrumAddress = *fulcrumAddress
+		info.TimeVector = fulcrumResponse.TimeVector.GetTime()
+
+		planetHistory[planet] = append(planetHistory[planet], *info)
 	}
-
-	info := new(data.CommandHistory)
-	info.Command = *command
-	info.City = city
-	info.FulcrumAddress = *fulcrumAddress
-	info.TimeVector = fulcrumResponse.TimeVector.GetTime()
-
-	planetHistory[planet] = append(planetHistory[planet], *info)
-
 }
 
 func ConsoleInteraction() {
@@ -120,7 +122,7 @@ func ConsoleInteraction() {
 
 	for {
 		log.Log(&f, "<ConsoleInteraction> Requesting user input")
-		command, planet, city, value := util.ReadUserInput(&f, "Ingresa el comando y argumentos que quieres usar:")
+		command, planet, city, value := util.ReadUserInput(&f, "Informante %d $ ", id)
 		log.Log(&f, "<ConsoleInteraction> Parsed command: %s %s %s %s", command, planet, city, value)
 		if command != nil {
 			ExecuteCommand(command, planet, city, value)

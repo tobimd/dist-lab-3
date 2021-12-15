@@ -22,7 +22,7 @@ var (
 
 // Print formatted message to stdout as well as to log file
 func Print(f *string, msg string, a ...interface{}) {
-	fmt.Printf(fmt.Sprintf(msg, a...) + "\n")
+	fmt.Printf(fmt.Sprintf(msg, a...))
 	Log(f, msg, a...)
 }
 
