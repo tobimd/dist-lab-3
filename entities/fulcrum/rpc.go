@@ -32,6 +32,7 @@ func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb
 		// 	timeVector := pb.TimeVector{Time: []uint32{0, 0, 0}}
 		// 	return &pb.FulcrumResponse{TimeVector: &timeVector}, nil
 		// }
+		log.Log(&f, "ADD CITY: pb.CommandParams=%+v", command)
 
 		SavePlanetData(planet, command.GetCityName(), int(command.GetNewNumOfRebels()), "", StoreMethod.Append)
 		UpdatePlanetLog(command.Command, planet, command.GetCityName(), command.GetNewNumOfRebels())

@@ -46,7 +46,6 @@ func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb
 		return cmdResponse, nil
 
 	default:
-
 		candidates := make([]string, 0)
 
 		informantVector := command.LastTimeVector.GetTime()
@@ -57,6 +56,10 @@ func (s *Server) RunCommand(ctx context.Context, command *pb.CommandParams) (*pb
 			if vector.GreaterThanOrEqual(informantVector) {
 				candidates = append(candidates, data.Address.FULCRUM[fulcrumId])
 			}
+		}
+
+		if len(candidates) == 0 {
+			candidates = data.Address.FULCRUM
 		}
 
 		// redirect client to fulcrum server address with most recent writes or current one
