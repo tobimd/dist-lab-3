@@ -4,9 +4,9 @@
 
 |    Integrante    |              Correo             |     Rol     |
 |----------------|-------------------------------|-----------|
-| Pablo Aravena    | pablo.aravenan@sansano.usm.cl   | 201773044   |
+| Pablo Aravena    | pablo.aravenan@sansano.usm.cl   | 201773044-7   |
 | Esteban Carrillo | esteban.carrillo@sansano.usm.cl | 201773032-3 |
-| César Paulangelo | cesar.paulangelo@sansano.usm.cl | 201773088   |
+| César Paulangelo | cesar.paulangelo@sansano.usm.cl | 201773088-9   |
 
 ---
 
